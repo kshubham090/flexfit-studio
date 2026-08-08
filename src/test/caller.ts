@@ -8,5 +8,5 @@ import type { User } from "@/db/schema";
  * Pass `null` for unauthenticated (publicProcedure-only) calls.
  */
 export function callerAs(user: User | null) {
-  return appRouter.createCaller({ db, user, token: null });
+  return appRouter.createCaller({ db, user, token: undefined });
 }

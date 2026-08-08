@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { bookings, classes, memberships, checkins, users } from "@/db/schema";
 import { router, protectedProcedure, staffProcedure } from "../trpc";
+import { hoursUntil } from "../domain/shared/time";
+import { activeMembershipFor } from "../domain/shared/membership";
 
 /**
  * Members may cancel free of charge up to this many hours before the class
@@ -12,29 +14,6 @@ export const FREE_CANCELLATION_HOURS = 12;
 
 /** Plans with this many credits are treated as unlimited and never decrement. */
 export const UNLIMITED_CREDITS = 999;
-
-function hoursUntil(iso: string, now = new Date()): number {
-  return (new Date(iso).getTime() - now.getTime()) / 36e5;
-}
-
-async function activeMembershipFor(
-  db: typeof import("@/db").db,
-  userId: number,
-) {
-  const today = new Date().toISOString().slice(0, 10);
-  return db
-    .select()
-    .from(memberships)
-    .where(
-      and(
-        eq(memberships.userId, userId),
-        eq(memberships.status, "active"),
-        sql`${memberships.endDate} >= ${today}`,
-      ),
-    )
-    .orderBy(desc(memberships.endDate))
-    .get();
-}
 
 export const bookingsRouter = router({
   mine: protectedProcedure

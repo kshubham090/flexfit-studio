@@ -8,35 +8,13 @@ import {
   memberships,
 } from "@/db/schema";
 import { router, protectedProcedure } from "../trpc";
+import { hoursUntil } from "../domain/shared/time";
 
 /**
  * Members may reschedule free of charge up to this many hours before the
  * original class starts. This is more generous than cancellation policy.
  */
 export const FREE_RESCHEDULE_HOURS = 4;
-
-function hoursUntil(iso: string, now = new Date()): number {
-  return (new Date(iso).getTime() - now.getTime()) / 36e5;
-}
-
-async function activeMembershipFor(
-  db: typeof import("@/db").db,
-  userId: number,
-) {
-  const today = new Date().toISOString().slice(0, 10);
-  return db
-    .select()
-    .from(memberships)
-    .where(
-      and(
-        eq(memberships.userId, userId),
-        eq(memberships.status, "active"),
-        sql`${memberships.endDate} >= ${today}`,
-      ),
-    )
-    .orderBy(desc(memberships.endDate))
-    .get();
-}
 
 export const reschedulesRouter = router({
   reschedule: protectedProcedure
