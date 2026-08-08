@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { classes, bookings, users } from "@/db/schema";
 import { router, publicProcedure, staffProcedure, adminProcedure } from "../trpc";
+import { cancelClass } from "../domain/classes/service";
 
 export const classesRouter = router({
   list: publicProcedure
@@ -131,25 +132,5 @@ export const classesRouter = router({
 
   cancel: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const cls = await ctx.db
-        .update(classes)
-        .set({ cancelled: true })
-        .where(eq(classes.id, input.id))
-        .returning()
-        .get();
-
-      if (!cls) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });
-      }
-
-      await ctx.db
-        .update(bookings)
-        .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
-        .where(
-          and(eq(bookings.classId, input.id), eq(bookings.status, "booked")),
-        );
-
-      return cls;
-    }),
+    .mutation(async ({ ctx, input }) => cancelClass(ctx.db, input.id)),
 });
