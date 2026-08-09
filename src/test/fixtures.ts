@@ -7,6 +7,7 @@ import {
   classes,
   companies,
   companyMembers,
+  notifications,
   type User,
 } from "@/db/schema";
 
@@ -114,6 +115,27 @@ export async function linkCompanyMember(user: User, companyId: number) {
   return db
     .insert(companyMembers)
     .values({ userId: user.id, companyId })
+    .returning()
+    .get();
+}
+
+/** Inserted directly (no router mutation creates a single targeted
+ * notification -- see documents/day1-discovery-notes.md finding 4), for
+ * arranging test state only. */
+export async function makeNotification(
+  user: User,
+  overrides: Partial<typeof notifications.$inferInsert> = {},
+) {
+  return db
+    .insert(notifications)
+    .values({
+      userId: user.id,
+      type: "announcement",
+      title: unique("Notice"),
+      message: "Test notification",
+      read: false,
+      ...overrides,
+    })
     .returning()
     .get();
 }

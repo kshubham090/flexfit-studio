@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { payments, users, memberships, membershipPlans } from "@/db/schema";
 import { router, protectedProcedure, adminProcedure } from "../trpc";
+import { refundPayment } from "../domain/payments/service";
 
 export const paymentsRouter = router({
   mine: protectedProcedure.query(async ({ ctx }) => {
@@ -72,37 +73,5 @@ export const paymentsRouter = router({
 
   refund: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const row = await ctx.db
-        .select()
-        .from(payments)
-        .where(eq(payments.id, input.id))
-        .get();
-
-      if (!row) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found." });
-      }
-      if (row.status !== "paid") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Only paid payments can be refunded.",
-        });
-      }
-
-      const updated = await ctx.db
-        .update(payments)
-        .set({ status: "refunded" })
-        .where(eq(payments.id, input.id))
-        .returning()
-        .get();
-
-      if (row.membershipId) {
-        await ctx.db
-          .update(memberships)
-          .set({ status: "cancelled" })
-          .where(eq(memberships.id, row.membershipId));
-      }
-
-      return updated;
-    }),
+    .mutation(async ({ ctx, input }) => refundPayment(ctx.db, input.id)),
 });

@@ -140,13 +140,23 @@ including all ten findings above as locked-in current behavior:
 - `classes.test.ts` -- admin cancellation's incomplete cleanup (finding 5):
   credits, waitlist, corporate bookings, notifications
 
-**Lighter/no coverage, by choice, not oversight:** auth (login/register/
-session), members (profile/search/role management), plans.subscribe
-(including the multi-membership gap, finding 6), payments (including the
-refund-doesn't-touch-bookings gap, finding 7), admin-companies (including
-the multi-company-link gap, finding 8), trainers (including the
-advisory-only availability gap, finding 9), notifications, and the admin
-reporting queries. These are simpler CRUD paths or single-table mutations
-without the cross-domain blast radius of the four flows above -- findings
-6-9 are documented and real, but not yet locked in by a test. Revisit
-before or during restructuring of those specific routers.
+**Update:** plans, payments, admin-companies, trainers, members, and most
+of auth now have characterization tests too (`plans.test.ts`,
+`payments.test.ts`, `admin-companies.test.ts`, `trainers.test.ts`,
+`members.test.ts`, `auth.test.ts`), including findings 6-9 as locked-in
+current behavior. Remaining real gaps, by choice, not oversight:
+
+- **`auth.login`/`auth.logout` are untestable via `callerAs`/`createCaller`**
+  -- confirmed empirically (not assumed): both call `next/headers`'s
+  `cookies()` directly inside the procedure body, not just via
+  `createContext`, which throws `cookies() was called outside a request
+  scope` outside a real Next.js request. Would need either an HTTP-level
+  test against a running server or mocking `next/headers`. Not attempted;
+  `auth.register`/`auth.me` (no `cookies()` call) are covered instead.
+- **`admin.ts`'s reporting queries** (stats, revenueByMonth, topTrainers,
+  etc.) and **`notifications.broadcast`'s exact returned count** are
+  read-only or reflect the *entire* shared test database rather than one
+  test's own data, so they're awkward to assert on precisely without
+  either a dedicated clean DB per test or asserting only on relative/
+  own-data effects (see `notifications.broadcast`'s test for the pattern
+  used instead). Not covered by a dedicated test file.

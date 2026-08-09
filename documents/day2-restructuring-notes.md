@@ -21,7 +21,19 @@ domain/
     service.ts            validateRescheduleRequest, reschedule
   classes/
     service.ts             cancelClass
+  plans/
+    service.ts              subscribeToPlan
+  payments/
+    service.ts               refundPayment
 ```
+
+`plans.subscribe` (creates a membership + a payment) and `payments.refund`
+(cancels a payment + a membership) got the same treatment once their own
+characterization tests existed (findings 6 and 7 respectively) -- real
+cross-table mutations, same domain-layer + transaction treatment as the
+four flows above. `payments.markPaid` and every `admin-companies`/
+`trainers`/`members`/`notifications` mutation stayed in their routers:
+single-table, no multi-aggregate transaction to own.
 
 Routers are now zod input validation + auth level (already encoded by
 `protectedProcedure`/`staffProcedure`/`adminProcedure`) + a call into the
@@ -84,6 +96,19 @@ now take a shared `AnyDb` type (`src/server/domain/shared/db.ts`) instead
 of the plain db client type, since Drizzle's transaction callback (`tx`)
 is a structurally-compatible but distinct TypeScript type from the db
 client `reschedule`/`bookMember`/etc. themselves receive from the router.
+
+## Coverage extended beyond the four original flows
+
+The four cross-domain flows named in the project plan (booking, reschedule,
+corporate credit-pool spend, cancellation refunds) were the Day 1 priority
+and got full characterization coverage first. This pass extends that same
+methodology to what Day 1 had flagged as "lighter coverage, by choice, not
+oversight": `plans`, `payments`, `admin-companies`, `trainers`, `members`,
+and most of `auth`, each with their own findings (6-9) now locked in as
+tests too. See the "Test coverage" section of
+`documents/day1-discovery-notes.md` for exactly what's covered where, and
+what's still deliberately out (admin's reporting queries,
+`auth.login`/`logout`).
 
 **Caveat, stated plainly:** none of these functions have an internal code
 path where a write happens and *then* a business-logic throw happens after
