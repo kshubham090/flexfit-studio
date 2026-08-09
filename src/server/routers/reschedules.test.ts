@@ -8,8 +8,18 @@ import { FREE_RESCHEDULE_HOURS } from "./reschedules";
 
 describe("reschedules.reschedule", () => {
   it("books the target class, cancels the original, and keeps the same credits spent", async () => {
-    const fromClass = await makeClass({ name: "Yoga", capacity: 2, creditCost: 2, startsAt: hoursFromNow(48) });
-    const toClass = await makeClass({ name: "Yoga", capacity: 2, creditCost: 2, startsAt: hoursFromNow(72) });
+    const fromClass = await makeClass({
+      name: "Yoga",
+      capacity: 2,
+      creditCost: 2,
+      startsAt: hoursFromNow(48),
+    });
+    const toClass = await makeClass({
+      name: "Yoga",
+      capacity: 2,
+      creditCost: 2,
+      startsAt: hoursFromNow(72),
+    });
 
     const member = await makeUser();
     await makeMembership(member, { creditsRemaining: 5 });
@@ -23,7 +33,11 @@ describe("reschedules.reschedule", () => {
     expect(result.newStatus).toBe("booked");
     expect(result.newBooking.creditsUsed).toBe(2); // carried over, not re-charged
 
-    const oldBooking = await db.select().from(bookings).where(eq(bookings.id, original.id)).get();
+    const oldBooking = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, original.id))
+      .get();
     expect(oldBooking?.status).toBe("cancelled");
   });
 
@@ -36,7 +50,10 @@ describe("reschedules.reschedule", () => {
     const original = await callerAs(member).bookings.book({ classId: fromClass.id });
 
     await expect(
-      callerAs(member).reschedules.reschedule({ fromBookingId: original.id, toClassId: toClass.id }),
+      callerAs(member).reschedules.reschedule({
+        fromBookingId: original.id,
+        toClassId: toClass.id,
+      }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
@@ -52,7 +69,10 @@ describe("reschedules.reschedule", () => {
     const original = await callerAs(member).bookings.book({ classId: fromClass.id });
 
     await expect(
-      callerAs(member).reschedules.reschedule({ fromBookingId: original.id, toClassId: toClass.id }),
+      callerAs(member).reschedules.reschedule({
+        fromBookingId: original.id,
+        toClassId: toClass.id,
+      }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
@@ -61,8 +81,18 @@ describe("reschedules.reschedule", () => {
       "rescheduling out of a full class does NOT promote the class's waitlist, " +
       "unlike a direct cancel",
     async () => {
-      const fromClass = await makeClass({ name: "Yoga", capacity: 1, creditCost: 1, startsAt: hoursFromNow(48) });
-      const toClass = await makeClass({ name: "Yoga", capacity: 2, creditCost: 1, startsAt: hoursFromNow(72) });
+      const fromClass = await makeClass({
+        name: "Yoga",
+        capacity: 1,
+        creditCost: 1,
+        startsAt: hoursFromNow(48),
+      });
+      const toClass = await makeClass({
+        name: "Yoga",
+        capacity: 2,
+        creditCost: 1,
+        startsAt: hoursFromNow(72),
+      });
 
       const member = await makeUser();
       await makeMembership(member, { creditsRemaining: 5 });
@@ -71,7 +101,9 @@ describe("reschedules.reschedule", () => {
 
       const waitlistedUser = await makeUser();
       await makeMembership(waitlistedUser, { creditsRemaining: 5 });
-      const waitlistedBooking = await callerAs(waitlistedUser).bookings.book({ classId: fromClass.id });
+      const waitlistedBooking = await callerAs(waitlistedUser).bookings.book({
+        classId: fromClass.id,
+      });
       expect(waitlistedBooking.status).toBe("waitlisted");
 
       await callerAs(member).reschedules.reschedule({
@@ -106,10 +138,15 @@ describe("reschedules.validateReschedule", () => {
       toClassId: toClass.id,
     });
     expect(validation.valid).toBe(false);
-    expect(validation.reason).toBe("You can only reschedule to a class with the same name.");
+    expect(validation.reason).toBe(
+      "You can only reschedule to a class with the same name.",
+    );
 
     await expect(
-      callerAs(member).reschedules.reschedule({ fromBookingId: original.id, toClassId: toClass.id }),
+      callerAs(member).reschedules.reschedule({
+        fromBookingId: original.id,
+        toClassId: toClass.id,
+      }),
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: "You can only reschedule to a class with the same name.",

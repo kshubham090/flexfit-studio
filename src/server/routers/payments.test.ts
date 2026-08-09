@@ -36,7 +36,9 @@ describe("payments.refund", () => {
     const admin = await makeUser({ role: "admin" });
     await callerAs(admin).payments.refund({ id: payment.id });
 
-    await expect(callerAs(admin).payments.refund({ id: payment.id })).rejects.toMatchObject({
+    await expect(
+      callerAs(admin).payments.refund({ id: payment.id }),
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
@@ -62,7 +64,11 @@ describe("payments.refund", () => {
         .get();
       expect(membershipAfter?.status).toBe("cancelled");
 
-      const bookingAfter = await db.select().from(bookings).where(eq(bookings.id, booking.id)).get();
+      const bookingAfter = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, booking.id))
+        .get();
       // Still "booked" against a membership that's no longer active. If
       // this ever comes back "cancelled", the gap has been fixed --
       // update discovery notes finding 7 rather than adjusting this
@@ -80,7 +86,9 @@ describe("payments.markPaid", () => {
     const admin = await makeUser({ role: "admin" });
     await callerAs(admin).payments.refund({ id: payment.id });
 
-    await expect(callerAs(admin).payments.markPaid({ id: payment.id })).rejects.toMatchObject({
+    await expect(
+      callerAs(admin).payments.markPaid({ id: payment.id }),
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });

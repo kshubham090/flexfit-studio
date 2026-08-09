@@ -10,7 +10,10 @@ describe("plans.subscribe", () => {
     const user = await makeUser();
     const plan = await makePlan({ priceCents: 4999, durationDays: 30, classCredits: 8 });
 
-    const membership = await callerAs(user).plans.subscribe({ planId: plan.id, method: "upi" });
+    const membership = await callerAs(user).plans.subscribe({
+      planId: plan.id,
+      method: "upi",
+    });
 
     expect(membership.status).toBe("active");
     expect(membership.creditsRemaining).toBe(8);
@@ -29,7 +32,9 @@ describe("plans.subscribe", () => {
     const user = await makeUser();
     const plan = await makePlan({ active: false });
 
-    await expect(callerAs(user).plans.subscribe({ planId: plan.id })).rejects.toMatchObject({
+    await expect(
+      callerAs(user).plans.subscribe({ planId: plan.id }),
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });

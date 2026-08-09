@@ -23,7 +23,11 @@ export async function subscribeToPlan(
   method: "card" | "cash" | "upi" | "transfer",
 ) {
   return db.transaction(async (tx) => {
-    const plan = await tx.select().from(membershipPlans).where(eq(membershipPlans.id, planId)).get();
+    const plan = await tx
+      .select()
+      .from(membershipPlans)
+      .where(eq(membershipPlans.id, planId))
+      .get();
 
     if (!plan) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found." });

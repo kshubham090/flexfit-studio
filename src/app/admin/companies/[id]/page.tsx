@@ -8,7 +8,11 @@ import { formatDateTime } from "@/lib/format";
 export default function CompanyDetailsPage() {
   const params = useParams();
   const id = parseInt(params.id as string);
-  const { data: company, isLoading, refetch } = trpc.adminCompanies.getById.useQuery({ id });
+  const {
+    data: company,
+    isLoading,
+    refetch,
+  } = trpc.adminCompanies.getById.useQuery({ id });
   const [topUpAmount, setTopUpAmount] = useState("");
   const [showTopUpForm, setShowTopUpForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
@@ -85,7 +89,9 @@ export default function CompanyDetailsPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="panel p-4">
-          <div className="muted text-xs uppercase tracking-wide mb-2">Credit Pool Balance</div>
+          <div className="muted text-xs uppercase tracking-wide mb-2">
+            Credit Pool Balance
+          </div>
           <div className="text-2xl font-semibold">{company.creditPoolBalance}</div>
           <button
             onClick={() => setShowTopUpForm(!showTopUpForm)}
@@ -162,11 +168,8 @@ export default function CompanyDetailsPage() {
           {memberSearchData && memberSearchData.length > 0 && (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {memberSearchData
-                .filter(
-                  (user: any) =>
-                    !company.members.some((m: any) => m.id === user.id),
-                )
-                .map((user: any) => (
+                .filter((user) => !company.members.some((m) => m.id === user.id))
+                .map((user) => (
                   <div
                     key={user.id}
                     className="flex items-center justify-between p-2 border rounded"
@@ -206,14 +209,16 @@ export default function CompanyDetailsPage() {
         <h2 className="font-medium">Linked Members ({company.members.length})</h2>
         {company.members.length > 0 ? (
           <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
-            {company.members.map((member: any) => (
+            {company.members.map((member) => (
               <div key={member.id} className="flex items-center gap-4 p-3">
                 <div className="flex-1">
                   <div className="font-medium text-sm">{member.name}</div>
                   <div className="text-xs muted">{member.email}</div>
                 </div>
                 <button
-                  onClick={() => unlinkMutation.mutate({ companyMemberId: member.companyMemberId })}
+                  onClick={() =>
+                    unlinkMutation.mutate({ companyMemberId: member.companyMemberId })
+                  }
                   className="btn-outline btn-sm text-red-600"
                   disabled={unlinkMutation.isPending}
                 >
@@ -231,11 +236,15 @@ export default function CompanyDetailsPage() {
         <h2 className="font-medium">Recent Corporate Bookings</h2>
         {company.recentBookings.length > 0 ? (
           <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
-            {company.recentBookings.map((booking: any) => (
+            {company.recentBookings.map((booking) => (
               <div key={booking.id} className="p-3 text-sm space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{booking.className}</span>
-                  <span className={booking.status === "attended" ? "text-green-600" : undefined}>
+                  <span
+                    className={
+                      booking.status === "attended" ? "text-green-600" : undefined
+                    }
+                  >
                     {booking.status}
                   </span>
                 </div>

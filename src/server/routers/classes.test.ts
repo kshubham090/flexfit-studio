@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { bookings, memberships, corporateBookings, companies, notifications } from "@/db/schema";
+import {
+  bookings,
+  memberships,
+  corporateBookings,
+  companies,
+  notifications,
+} from "@/db/schema";
 import { callerAs } from "@/test/caller";
 import {
   makeUser,
@@ -25,7 +31,11 @@ describe(
       const admin = await makeUser({ role: "admin" });
       await callerAs(admin).classes.cancel({ id: cls.id });
 
-      const updatedBooking = await db.select().from(bookings).where(eq(bookings.id, booking.id)).get();
+      const updatedBooking = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, booking.id))
+        .get();
       expect(updatedBooking?.status).toBe("cancelled");
 
       const updatedMembership = await db
@@ -47,7 +57,9 @@ describe(
 
       const waitlisted = await makeUser();
       await makeMembership(waitlisted, { creditsRemaining: 5 });
-      const waitlistedBooking = await callerAs(waitlisted).bookings.book({ classId: cls.id });
+      const waitlistedBooking = await callerAs(waitlisted).bookings.book({
+        classId: cls.id,
+      });
       expect(waitlistedBooking.status).toBe("waitlisted");
 
       const admin = await makeUser({ role: "admin" });
@@ -67,7 +79,9 @@ describe(
       const company = await makeCompany({ creditPoolBalance: 10 });
       const employee = await makeUser();
       await linkCompanyMember(employee, company.id);
-      const corpBooking = await callerAs(employee).corporateBookings.book({ classId: cls.id });
+      const corpBooking = await callerAs(employee).corporateBookings.book({
+        classId: cls.id,
+      });
       expect(corpBooking.status).toBe("booked");
 
       const admin = await makeUser({ role: "admin" });
@@ -80,7 +94,11 @@ describe(
         .get();
       expect(stillBooked?.status).toBe("booked"); // untouched by the class cancellation
 
-      const companyAfter = await db.select().from(companies).where(eq(companies.id, company.id)).get();
+      const companyAfter = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.id, company.id))
+        .get();
       expect(companyAfter?.creditPoolBalance).toBe(8); // never refunded either
     });
 

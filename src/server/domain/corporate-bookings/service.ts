@@ -88,7 +88,12 @@ export async function bookCorporate(db: DbClient, userId: number, classId: numbe
     const [{ count }] = await tx
       .select({ count: sql<number>`count(*)` })
       .from(corporateBookings)
-      .where(and(eq(corporateBookings.classId, cls.id), eq(corporateBookings.status, "booked")));
+      .where(
+        and(
+          eq(corporateBookings.classId, cls.id),
+          eq(corporateBookings.status, "booked"),
+        ),
+      );
 
     const isFull = Number(count) >= cls.capacity;
 
@@ -178,7 +183,10 @@ export async function cancelCorporate(
         .select()
         .from(corporateBookings)
         .where(
-          and(eq(corporateBookings.classId, row.cls.id), eq(corporateBookings.status, "waitlisted")),
+          and(
+            eq(corporateBookings.classId, row.cls.id),
+            eq(corporateBookings.status, "waitlisted"),
+          ),
         )
         .orderBy(asc(corporateBookings.bookedAt))
         .get();
@@ -199,7 +207,10 @@ export async function cancelCorporate(
           await tx
             .update(companies)
             .set({
-              creditPoolBalance: Math.max(0, company.creditPoolBalance - row.cls.creditCost),
+              creditPoolBalance: Math.max(
+                0,
+                company.creditPoolBalance - row.cls.creditCost,
+              ),
             })
             .where(eq(companies.id, company.id));
         }

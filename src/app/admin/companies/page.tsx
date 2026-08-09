@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { formatMoney } from "@/lib/format";
 
 export default function CompaniesPage() {
   const { data: companies, isLoading, refetch } = trpc.adminCompanies.list.useQuery();
@@ -50,17 +49,17 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Corporate Memberships</h1>
         {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-sm"
-          >
+          <button onClick={() => setShowForm(true)} className="btn btn-sm">
             New Company
           </button>
         )}
       </div>
 
       {success && (
-        <div className="p-3 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}>
+        <div
+          className="p-3 rounded"
+          style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
+        >
           <p style={{ color: "var(--accent)" }}>Company created successfully!</p>
         </div>
       )}
@@ -96,7 +95,9 @@ export default function CompaniesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Initial Credit Pool</label>
+              <label className="block text-sm font-medium mb-2">
+                Initial Credit Pool
+              </label>
               <input
                 type="number"
                 value={credits}
@@ -131,7 +132,10 @@ export default function CompaniesPage() {
             </div>
 
             {error && (
-              <div className="p-3 rounded" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}>
+              <div
+                className="p-3 rounded"
+                style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+              >
                 <p style={{ color: "#ef4444" }}>{error}</p>
               </div>
             )}
@@ -153,7 +157,9 @@ export default function CompaniesPage() {
               </div>
               <div className="text-right">
                 <div className="font-semibold">{c.creditPoolBalance} credits</div>
-                <div className={`text-sm ${c.active ? "text-green-600" : "text-red-600"}`}>
+                <div
+                  className={`text-sm ${c.active ? "text-green-600" : "text-red-600"}`}
+                >
                   {c.active ? "Active" : "Inactive"}
                 </div>
               </div>

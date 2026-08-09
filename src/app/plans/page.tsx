@@ -41,9 +41,7 @@ export default function PlansPage() {
               <p className="muted mt-1 text-sm">{p.description}</p>
             </div>
 
-            <div className="text-2xl font-semibold">
-              {formatMoney(p.priceCents)}
-            </div>
+            <div className="text-2xl font-semibold">{formatMoney(p.priceCents)}</div>
 
             <p className="muted text-sm">
               {p.durationDays} days &middot;{" "}

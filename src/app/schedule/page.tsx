@@ -23,9 +23,7 @@ export default function SchedulePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Class schedule</h1>
-        <p className="muted mt-1 text-sm">
-          {classes?.length ?? 0} upcoming classes
-        </p>
+        <p className="muted mt-1 text-sm">{classes?.length ?? 0} upcoming classes</p>
       </div>
 
       {book.error && (
@@ -36,15 +34,15 @@ export default function SchedulePage() {
 
       <div className="space-y-2">
         {classes?.map((c) => (
-          <div
-            key={c.id}
-            className="panel flex items-center gap-4 p-4"
-          >
+          <div key={c.id} className="panel flex items-center gap-4 p-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="font-medium">{c.name}</h2>
                 {c.full && (
-                  <span className="rounded px-1.5 py-0.5 text-xs" style={{ background: "#3a2a1a", color: "#fbbf24" }}>
+                  <span
+                    className="rounded px-1.5 py-0.5 text-xs"
+                    style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                  >
                     Full
                   </span>
                 )}
@@ -75,9 +73,7 @@ export default function SchedulePage() {
         ))}
       </div>
 
-      {!user && (
-        <p className="muted text-sm">Sign in to book a class.</p>
-      )}
+      {!user && <p className="muted text-sm">Sign in to book a class.</p>}
     </div>
   );
 }

@@ -33,12 +33,12 @@ export function RescheduleModal({
     },
     {
       enabled: isOpen,
-    }
+    },
   );
 
   // Filter to only same-name classes (excluding the original)
   const sameNameClasses = (availableClasses || []).filter(
-    (cls) => cls.name === fromClassName
+    (cls) => cls.name === fromClassName,
   );
 
   const reschedule = trpc.reschedules.reschedule.useMutation({
@@ -83,11 +83,7 @@ export function RescheduleModal({
           </p>
         </div>
 
-        {error && (
-          <p style={{ color: "#f87171", fontSize: "0.875rem" }}>
-            {error}
-          </p>
-        )}
+        {error && <p style={{ color: "#f87171", fontSize: "0.875rem" }}>{error}</p>}
 
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {sameNameClasses.length ? (
@@ -128,18 +124,12 @@ export function RescheduleModal({
         </div>
 
         <div className="flex gap-2 justify-end">
-          <button
-            className="btn"
-            disabled={reschedule.isPending}
-            onClick={onClose}
-          >
+          <button className="btn" disabled={reschedule.isPending} onClick={onClose}>
             Cancel
           </button>
           <button
             className="btn btn-primary"
-            disabled={
-              !selectedClassId || reschedule.isPending
-            }
+            disabled={!selectedClassId || reschedule.isPending}
             onClick={() => {
               if (selectedClassId) {
                 reschedule.mutate({

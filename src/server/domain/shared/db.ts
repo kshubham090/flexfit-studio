@@ -8,6 +8,9 @@ type DbClient = typeof import("@/db").db;
  */
 export type AnyDb =
   | DbClient
-  | (Parameters<DbClient["transaction"]>[0] extends (tx: infer T, ...args: unknown[]) => unknown
+  | (Parameters<DbClient["transaction"]>[0] extends (
+      tx: infer T,
+      ...args: unknown[]
+    ) => unknown
       ? T
       : never);

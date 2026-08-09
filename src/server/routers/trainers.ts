@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq, and, gte } from "drizzle-orm";
-import { classes, users, trainerAvailability } from "@/db/schema";
+import { classes, trainerAvailability } from "@/db/schema";
 import { router, protectedProcedure } from "../trpc";
 
 export const trainersRouter = router({
@@ -153,10 +153,12 @@ export const trainersRouter = router({
       const classEnd = new Date(classStart.getTime() + input.durationMin * 60000);
 
       const dayOfWeek = classStart.getUTCDay();
-      const startTimeStr = String(classStart.getUTCHours()).padStart(2, "0") +
+      const startTimeStr =
+        String(classStart.getUTCHours()).padStart(2, "0") +
         ":" +
         String(classStart.getUTCMinutes()).padStart(2, "0");
-      const endTimeStr = String(classEnd.getUTCHours()).padStart(2, "0") +
+      const endTimeStr =
+        String(classEnd.getUTCHours()).padStart(2, "0") +
         ":" +
         String(classEnd.getUTCMinutes()).padStart(2, "0");
 
@@ -178,8 +180,7 @@ export const trainersRouter = router({
       const availStart = availability.startTime;
       const availEnd = availability.endTime;
 
-      const isWithinAvailability =
-        startTimeStr >= availStart && endTimeStr <= availEnd;
+      const isWithinAvailability = startTimeStr >= availStart && endTimeStr <= availEnd;
 
       if (!isWithinAvailability) {
         return { available: false, reason: "Outside availability hours" };
@@ -188,18 +189,11 @@ export const trainersRouter = router({
       const conflictingClasses = await ctx.db
         .select()
         .from(classes)
-        .where(
-          and(
-            eq(classes.trainerId, input.trainerId),
-            eq(classes.cancelled, false),
-          ),
-        );
+        .where(and(eq(classes.trainerId, input.trainerId), eq(classes.cancelled, false)));
 
       for (const cls of conflictingClasses) {
         const existStart = new Date(cls.startsAt);
-        const existEnd = new Date(
-          existStart.getTime() + cls.durationMin * 60000,
-        );
+        const existEnd = new Date(existStart.getTime() + cls.durationMin * 60000);
 
         if (classStart < existEnd && classEnd > existStart) {
           return { available: false, reason: "Trainer already has a class at this time" };

@@ -20,9 +20,7 @@ export default function WaitlistPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Waitlist</h1>
-        <p className="muted mt-1 text-sm">
-          Classes you're waitlisted for
-        </p>
+        <p className="muted mt-1 text-sm">Classes you&apos;re waitlisted for</p>
       </div>
 
       {cancel.error && (
@@ -38,12 +36,16 @@ export default function WaitlistPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium">{w.className}</h3>
-                  <span className="rounded px-2 py-1 text-xs font-medium" style={{ background: "#3a2a1a", color: "#fbbf24" }}>
+                  <span
+                    className="rounded px-2 py-1 text-xs font-medium"
+                    style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                  >
                     #{w.position} in queue
                   </span>
                 </div>
                 <p className="muted mt-0.5 text-sm">
-                  {formatDateTime(w.startsAt)} &middot; {w.room} &middot; {w.durationMin} min
+                  {formatDateTime(w.startsAt)} &middot; {w.room} &middot; {w.durationMin}{" "}
+                  min
                 </p>
               </div>
 
@@ -58,7 +60,7 @@ export default function WaitlistPage() {
           ))}
         </div>
       ) : (
-        <p className="muted text-sm">You're not waitlisted for any classes.</p>
+        <p className="muted text-sm">You&apos;re not waitlisted for any classes.</p>
       )}
     </div>
   );

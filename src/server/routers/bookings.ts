@@ -30,9 +30,7 @@ export const bookingsRouter = router({
         .orderBy(asc(classes.startsAt));
 
       const now = new Date();
-      return rows.filter((r) =>
-        input.includePast ? true : new Date(r.startsAt) >= now,
-      );
+      return rows.filter((r) => (input.includePast ? true : new Date(r.startsAt) >= now));
     }),
 
   book: protectedProcedure
@@ -76,7 +74,9 @@ export const bookingsRouter = router({
     .input(z.object({ userId: z.number(), hoursAhead: z.number().default(2) }))
     .query(async ({ ctx, input }) => {
       const now = new Date().toISOString();
-      const futureTime = new Date(Date.now() + input.hoursAhead * 60 * 60 * 1000).toISOString();
+      const futureTime = new Date(
+        Date.now() + input.hoursAhead * 60 * 60 * 1000,
+      ).toISOString();
 
       return ctx.db
         .select({
@@ -132,12 +132,7 @@ export const bookingsRouter = router({
       })
       .from(bookings)
       .innerJoin(classes, eq(bookings.classId, classes.id))
-      .where(
-        and(
-          eq(bookings.userId, ctx.user.id),
-          eq(bookings.status, "waitlisted"),
-        ),
-      )
+      .where(and(eq(bookings.userId, ctx.user.id), eq(bookings.status, "waitlisted")))
       .orderBy(asc(classes.startsAt));
 
     // For each waitlisted booking, calculate position in queue
@@ -164,4 +159,3 @@ export const bookingsRouter = router({
     return result;
   }),
 });
-

@@ -1,14 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import type { inferRouterOutputs } from "@trpc/server";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
+import type { AppRouter } from "@/server/routers/_app";
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type LookedUpMember = RouterOutputs["members"]["lookupByEmailOrPhone"];
 
 export default function KioskPage() {
   const { data: user } = trpc.auth.me.useQuery();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [checkinSuccess, setCheckinSuccess] = useState<{ memberName: string; className: string } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<LookedUpMember | null>(null);
+  const [checkinSuccess, setCheckinSuccess] = useState<{
+    memberName: string;
+    className: string;
+  } | null>(null);
 
   const lookupMember = trpc.members.lookupByEmailOrPhone.useQuery(
     { query: searchQuery },
@@ -27,7 +35,9 @@ export default function KioskPage() {
 
   const markAttended = trpc.bookings.markAttended.useMutation({
     onSuccess: (_, variables) => {
-      const classInfo = upcomingClasses.data?.find((c) => c.bookingId === variables.bookingId);
+      const classInfo = upcomingClasses.data?.find(
+        (c) => c.bookingId === variables.bookingId,
+      );
       if (classInfo && selectedMember) {
         setCheckinSuccess({
           memberName: selectedMember.name,
@@ -47,9 +57,12 @@ export default function KioskPage() {
     return <p className="muted">Access denied. Staff only.</p>;
   }
 
-  const isMembershipExpired = memberDetails.data && memberDetails.data.memberships && memberDetails.data.memberships.length > 0
-    ? new Date(memberDetails.data.memberships[0].endDate) < new Date()
-    : false;
+  const isMembershipExpired =
+    memberDetails.data &&
+    memberDetails.data.memberships &&
+    memberDetails.data.memberships.length > 0
+      ? new Date(memberDetails.data.memberships[0].endDate) < new Date()
+      : false;
 
   const hasNoCredits = memberDetails.data?.memberships?.[0]?.creditsRemaining === 0;
 
@@ -57,13 +70,20 @@ export default function KioskPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Check-in Kiosk</h1>
-        <p className="muted mt-1 text-sm">Look up a member and check them in to upcoming classes</p>
+        <p className="muted mt-1 text-sm">
+          Look up a member and check them in to upcoming classes
+        </p>
       </div>
 
       {checkinSuccess && (
-        <div className="rounded border p-4" style={{ borderColor: "#16a34a", background: "#064e3b", color: "#bbf7d0" }}>
+        <div
+          className="rounded border p-4"
+          style={{ borderColor: "#16a34a", background: "#064e3b", color: "#bbf7d0" }}
+        >
           <div className="font-medium">✓ Check-in successful</div>
-          <div className="muted mt-1 text-sm">{checkinSuccess.memberName} checked in to {checkinSuccess.className}</div>
+          <div className="muted mt-1 text-sm">
+            {checkinSuccess.memberName} checked in to {checkinSuccess.className}
+          </div>
         </div>
       )}
 
@@ -85,14 +105,20 @@ export default function KioskPage() {
         </div>
 
         {lookupMember.isLoading && <p className="muted text-sm">Searching...</p>}
-        {lookupMember.error && <p className="text-sm" style={{ color: "#ef4444" }}>Member not found</p>}
+        {lookupMember.error && (
+          <p className="text-sm" style={{ color: "#ef4444" }}>
+            Member not found
+          </p>
+        )}
         {lookupMember.data && !selectedMember && (
           <div className="panel p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium">{lookupMember.data.name}</div>
                 <div className="muted text-xs mt-1">{lookupMember.data.email}</div>
-                {lookupMember.data.phone && <div className="muted text-xs">{lookupMember.data.phone}</div>}
+                {lookupMember.data.phone && (
+                  <div className="muted text-xs">{lookupMember.data.phone}</div>
+                )}
               </div>
               <button
                 onClick={() => setSelectedMember(lookupMember.data)}
@@ -125,22 +151,39 @@ export default function KioskPage() {
             </button>
           </div>
 
-          {memberDetails.data?.memberships && memberDetails.data.memberships.length > 0 && (
-            <div className="space-y-2">
-              {isMembershipExpired && (
-                <div className="rounded border p-3 text-sm" style={{ borderColor: "#dc2626", background: "#7f1d1d", color: "#fca5a5" }}>
-                  ⚠ Membership has expired
-                </div>
-              )}
-              {hasNoCredits && (
-                <div className="rounded border p-3 text-sm" style={{ borderColor: "#dc2626", background: "#7f1d1d", color: "#fca5a5" }}>
-                  ⚠ No credits remaining
-                </div>
-              )}
-            </div>
-          )}
+          {memberDetails.data?.memberships &&
+            memberDetails.data.memberships.length > 0 && (
+              <div className="space-y-2">
+                {isMembershipExpired && (
+                  <div
+                    className="rounded border p-3 text-sm"
+                    style={{
+                      borderColor: "#dc2626",
+                      background: "#7f1d1d",
+                      color: "#fca5a5",
+                    }}
+                  >
+                    ⚠ Membership has expired
+                  </div>
+                )}
+                {hasNoCredits && (
+                  <div
+                    className="rounded border p-3 text-sm"
+                    style={{
+                      borderColor: "#dc2626",
+                      background: "#7f1d1d",
+                      color: "#fca5a5",
+                    }}
+                  >
+                    ⚠ No credits remaining
+                  </div>
+                )}
+              </div>
+            )}
 
-          {upcomingClasses.isLoading && <p className="muted text-sm">Loading classes...</p>}
+          {upcomingClasses.isLoading && (
+            <p className="muted text-sm">Loading classes...</p>
+          )}
           {upcomingClasses.data && upcomingClasses.data.length === 0 && (
             <p className="muted text-sm">No classes in the next 2 hours</p>
           )}
@@ -152,10 +195,13 @@ export default function KioskPage() {
                     <div className="flex-1">
                       <div className="font-medium">{cls.className}</div>
                       <div className="muted mt-1 text-sm">
-                        {formatDateTime(cls.startsAt)} · {cls.room} · {cls.durationMin} min
+                        {formatDateTime(cls.startsAt)} · {cls.room} · {cls.durationMin}{" "}
+                        min
                       </div>
                       {cls.trainerName && (
-                        <div className="muted text-xs mt-1">Trainer: {cls.trainerName}</div>
+                        <div className="muted text-xs mt-1">
+                          Trainer: {cls.trainerName}
+                        </div>
                       )}
                     </div>
                     <button
@@ -165,7 +211,9 @@ export default function KioskPage() {
                           source: "kiosk",
                         })
                       }
-                      disabled={markAttended.isPending || isMembershipExpired || hasNoCredits}
+                      disabled={
+                        markAttended.isPending || isMembershipExpired || hasNoCredits
+                      }
                       className="btn btn-primary btn-sm ml-4"
                     >
                       Check in

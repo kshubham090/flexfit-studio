@@ -35,7 +35,10 @@ describe("trainers.checkAvailability", () => {
       startsAt: FIXED_STARTS_AT,
       durationMin: 60,
     });
-    expect(result).toEqual({ available: false, reason: "No availability set for this day" });
+    expect(result).toEqual({
+      available: false,
+      reason: "No availability set for this day",
+    });
   });
 
   it("is unavailable outside the set window", async () => {
@@ -62,7 +65,11 @@ describe("trainers.checkAvailability", () => {
       startTime: "08:00",
       endTime: "18:00",
     });
-    await makeClass({ trainerId: trainer.id, startsAt: FIXED_STARTS_AT, durationMin: 60 });
+    await makeClass({
+      trainerId: trainer.id,
+      startsAt: FIXED_STARTS_AT,
+      durationMin: 60,
+    });
 
     const admin = await makeUser({ role: "admin" });
     const result = await callerAs(admin).trainers.checkAvailability({
@@ -87,7 +94,11 @@ describe("trainers.checkAvailability", () => {
         startTime: "08:00",
         endTime: "18:00",
       });
-      await makeClass({ trainerId: trainer.id, startsAt: FIXED_STARTS_AT, durationMin: 60 });
+      await makeClass({
+        trainerId: trainer.id,
+        startsAt: FIXED_STARTS_AT,
+        durationMin: 60,
+      });
 
       const admin = await makeUser({ role: "admin" });
       const check = await callerAs(admin).trainers.checkAvailability({

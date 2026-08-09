@@ -5,7 +5,11 @@ import { trpc } from "@/lib/trpc";
 import { formatMoney, formatDateTime } from "@/lib/format";
 
 export default function AdminPage() {
-  const { data: stats, isLoading, error } = trpc.admin.stats.useQuery(undefined, {
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = trpc.admin.stats.useQuery(undefined, {
     retry: false,
   });
   const { data: utilisation } = trpc.admin.classUtilisation.useQuery({ limit: 8 });

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text, real } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -131,9 +131,13 @@ export const notifications = sqliteTable("notifications", {
     .notNull()
     .references(() => users.id),
   type: text("type", {
-    enum: ["waitlist_promotion", "class_cancelled", "membership_expiring", "announcement"],
-  })
-    .notNull(),
+    enum: [
+      "waitlist_promotion",
+      "class_cancelled",
+      "membership_expiring",
+      "announcement",
+    ],
+  }).notNull(),
   title: text("title").notNull(),
   message: text("message").notNull(),
   read: integer("read", { mode: "boolean" }).notNull().default(false),

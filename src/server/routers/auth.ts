@@ -5,12 +5,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { users, sessions } from "@/db/schema";
 import { verifyPassword, hashPassword } from "@/lib/password";
-import {
-  router,
-  publicProcedure,
-  protectedProcedure,
-  SESSION_COOKIE,
-} from "../trpc";
+import { router, publicProcedure, protectedProcedure, SESSION_COOKIE } from "../trpc";
 
 const SESSION_DAYS = 30;
 

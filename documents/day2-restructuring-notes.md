@@ -46,7 +46,7 @@ extracted -- they have no cross-table side effects, so pulling them into
 **Decision: `domain/bookings` and `domain/corporate-bookings` stay
 separate**, not merged into one booking domain, even though their
 book/cancel logic is structurally near-identical. Finding 2 (capacity not
-shared between the two tables) is a *behavior* question -- merging the
+shared between the two tables) is a _behavior_ question -- merging the
 domains now would resolve it as a side effect of restructuring instead of
 a deliberate, logged decision. Revisit only as its own change.
 
@@ -111,7 +111,7 @@ what's still deliberately out (admin's reporting queries,
 `auth.login`/`logout`).
 
 **Caveat, stated plainly:** none of these functions have an internal code
-path where a write happens and *then* a business-logic throw happens after
+path where a write happens and _then_ a business-logic throw happens after
 it (every validation runs before the first write) -- so there's no
 business-logic-triggered rollback to demonstrate with the current test
 suite. What the transaction wrapping actually protects against is a

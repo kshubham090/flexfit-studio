@@ -25,9 +25,7 @@ export const membersRouter = router({
     const [{ attended }] = await ctx.db
       .select({ attended: sql<number>`count(*)` })
       .from(bookings)
-      .where(
-        and(eq(bookings.userId, ctx.user.id), eq(bookings.status, "attended")),
-      );
+      .where(and(eq(bookings.userId, ctx.user.id), eq(bookings.status, "attended")));
 
     return {
       id: ctx.user.id,
@@ -81,11 +79,7 @@ export const membersRouter = router({
   byId: staffProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db
-        .select()
-        .from(users)
-        .where(eq(users.id, input.id))
-        .get();
+      const user = await ctx.db.select().from(users).where(eq(users.id, input.id)).get();
 
       if (!user) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Member not found." });
@@ -145,12 +139,7 @@ export const membersRouter = router({
           active: users.active,
         })
         .from(users)
-        .where(
-          or(
-            like(users.email, term),
-            like(users.phone, term),
-          ),
-        )
+        .where(or(like(users.email, term), like(users.phone, term)))
         .get();
 
       if (!user || user.role !== "member") {

@@ -20,7 +20,9 @@ function unique(label: string) {
   return `${label}-${Date.now()}-${counter}`;
 }
 
-export async function makeUser(overrides: Partial<typeof users.$inferInsert> = {}): Promise<User> {
+export async function makeUser(
+  overrides: Partial<typeof users.$inferInsert> = {},
+): Promise<User> {
   return db
     .insert(users)
     .values({
@@ -34,7 +36,9 @@ export async function makeUser(overrides: Partial<typeof users.$inferInsert> = {
     .get();
 }
 
-export async function makePlan(overrides: Partial<typeof membershipPlans.$inferInsert> = {}) {
+export async function makePlan(
+  overrides: Partial<typeof membershipPlans.$inferInsert> = {},
+) {
   return db
     .insert(membershipPlans)
     .values({
@@ -97,7 +101,9 @@ export async function makeClass(overrides: Partial<typeof classes.$inferInsert> 
     .get();
 }
 
-export async function makeCompany(overrides: Partial<typeof companies.$inferInsert> = {}) {
+export async function makeCompany(
+  overrides: Partial<typeof companies.$inferInsert> = {},
+) {
   return db
     .insert(companies)
     .values({

@@ -46,9 +46,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Hello, {profile.name.split(" ")[0]}
         </h1>
-        <p className="muted mt-1 text-sm">
-          {profile.classesAttended} classes attended
-        </p>
+        <p className="muted mt-1 text-sm">{profile.classesAttended} classes attended</p>
       </div>
 
       <section className="panel p-5">
@@ -97,7 +95,10 @@ export default function DashboardPage() {
         {bookings?.length ? (
           <div className="space-y-2">
             {bookings.map((b) => (
-              <div key={b.id} className="panel flex items-center gap-2 p-4 flex-wrap sm:flex-nowrap">
+              <div
+                key={b.id}
+                className="panel flex items-center gap-2 p-4 flex-wrap sm:flex-nowrap"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium">{b.className}</h3>
@@ -152,9 +153,7 @@ export default function DashboardPage() {
             {rescheduleHistory.map((r) => (
               <div key={r.id} className="panel p-4">
                 <div className="text-sm">
-                  <p className="font-medium">
-                    {r.fromClassName}
-                  </p>
+                  <p className="font-medium">{r.fromClassName}</p>
                   <p className="muted text-xs mt-1">
                     From: {formatDateTime(r.fromClassTime ?? "")} • {r.fromClassRoom}
                   </p>
@@ -173,9 +172,7 @@ export default function DashboardPage() {
 
       <RescheduleModal
         isOpen={rescheduleModal.isOpen}
-        onClose={() =>
-          setRescheduleModal({ ...rescheduleModal, isOpen: false })
-        }
+        onClose={() => setRescheduleModal({ ...rescheduleModal, isOpen: false })}
         fromBookingId={rescheduleModal.bookingId}
         fromClassName={rescheduleModal.className}
         fromClassTime={rescheduleModal.classTime}

@@ -56,7 +56,10 @@ export default function AdminReportsPage() {
         {revenueByMonth && revenueByMonth.length > 0 ? (
           <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
             {revenueByMonth.map((row) => (
-              <div key={row.month} className="flex items-center justify-between p-3 text-sm">
+              <div
+                key={row.month}
+                className="flex items-center justify-between p-3 text-sm"
+              >
                 <span className="muted">{row.month}</span>
                 <span className="font-medium">{formatMoney(row.totalCents)}</span>
               </div>
@@ -72,7 +75,10 @@ export default function AdminReportsPage() {
         {revenueByMethod && revenueByMethod.length > 0 ? (
           <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
             {revenueByMethod.map((row) => (
-              <div key={row.method} className="flex items-center justify-between p-3 text-sm">
+              <div
+                key={row.method}
+                className="flex items-center justify-between p-3 text-sm"
+              >
                 <div className="flex-1">
                   <div className="capitalize">{row.method}</div>
                   <div className="muted text-xs">{row.count} transactions</div>

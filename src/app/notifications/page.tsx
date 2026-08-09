@@ -4,10 +4,11 @@ import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
 
 export default function NotificationsPage() {
-  const { data: notifications, isLoading, error } = trpc.notifications.list.useQuery(
-    undefined,
-    { retry: false }
-  );
+  const {
+    data: notifications,
+    isLoading,
+    error,
+  } = trpc.notifications.list.useQuery(undefined, { retry: false });
   const markAllAsRead = trpc.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
       // Refresh the list
@@ -54,7 +55,9 @@ export default function NotificationsPage() {
                 <div className="flex-1">
                   <div className="font-medium">{notif.title}</div>
                   <div className="mt-1 text-sm muted">{notif.message}</div>
-                  <div className="mt-2 text-xs muted">{formatDateTime(notif.createdAt)}</div>
+                  <div className="mt-2 text-xs muted">
+                    {formatDateTime(notif.createdAt)}
+                  </div>
                 </div>
                 {!notif.read && (
                   <div

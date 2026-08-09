@@ -9,8 +9,7 @@ export default function AdminAttendancePage() {
     trpc.admin.checkinsPerDay.useQuery();
   const { data: topTrainers, isLoading: trainersLoading } =
     trpc.admin.topTrainers.useQuery();
-  const { data: noShowList, isLoading: noShowLoading } =
-    trpc.admin.noShowList.useQuery();
+  const { data: noShowList, isLoading: noShowLoading } = trpc.admin.noShowList.useQuery();
 
   const isLoading = checkinsLoading || trainersLoading || noShowLoading;
 
@@ -26,21 +25,23 @@ export default function AdminAttendancePage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
-        <p className="muted mt-1 text-sm">Last 14 days of check-ins and class attendance</p>
+        <p className="muted mt-1 text-sm">
+          Last 14 days of check-ins and class attendance
+        </p>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-3">
         <div className="panel p-4">
-          <div className="muted text-xs uppercase tracking-wide">Total Check-ins (14d)</div>
+          <div className="muted text-xs uppercase tracking-wide">
+            Total Check-ins (14d)
+          </div>
           <div className="mt-1 text-xl font-semibold">{totalCheckins}</div>
         </div>
 
         <div className="panel p-4">
           <div className="muted text-xs uppercase tracking-wide">Top Trainer</div>
           <div className="mt-1 text-xl font-semibold">
-            {topTrainers && topTrainers.length > 0
-              ? topTrainers[0].trainerName
-              : "N/A"}
+            {topTrainers && topTrainers.length > 0 ? topTrainers[0].trainerName : "N/A"}
           </div>
         </div>
 
@@ -55,7 +56,10 @@ export default function AdminAttendancePage() {
         {checkinsPerDay && checkinsPerDay.length > 0 ? (
           <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
             {checkinsPerDay.map((row) => (
-              <div key={row.date} className="flex items-center justify-between p-3 text-sm">
+              <div
+                key={row.date}
+                className="flex items-center justify-between p-3 text-sm"
+              >
                 <span className="muted">{formatDate(row.date)}</span>
                 <span className="font-medium">{row.count} check-ins</span>
               </div>
@@ -75,7 +79,9 @@ export default function AdminAttendancePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{trainer.trainerName}</div>
-                    <div className="muted text-xs">{trainer.classCount} classes taught</div>
+                    <div className="muted text-xs">
+                      {trainer.classCount} classes taught
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="font-medium">{trainer.attendedCount}</div>

@@ -45,9 +45,9 @@ describe("notifications.broadcast", () => {
       });
 
       const list = await callerAs(member).notifications.list();
-      expect(list.some((n) => n.title === "Studio closed" && n.type === "announcement")).toBe(
-        true,
-      );
+      expect(
+        list.some((n) => n.title === "Studio closed" && n.type === "announcement"),
+      ).toBe(true);
     },
   );
 

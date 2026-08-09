@@ -10,12 +10,7 @@ export const notificationsRouter = router({
         count: sql<number>`count(*)`,
       })
       .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, ctx.user.id),
-          not(notifications.read)
-        )
-      );
+      .where(and(eq(notifications.userId, ctx.user.id), not(notifications.read)));
 
     return Number(count) || 0;
   }),
@@ -35,12 +30,7 @@ export const notificationsRouter = router({
     await ctx.db
       .update(notifications)
       .set({ read: true })
-      .where(
-        and(
-          eq(notifications.userId, ctx.user.id),
-          not(notifications.read)
-        )
-      );
+      .where(and(eq(notifications.userId, ctx.user.id), not(notifications.read)));
 
     return { ok: true };
   }),
@@ -50,7 +40,7 @@ export const notificationsRouter = router({
       z.object({
         title: z.string(),
         message: z.string(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const activeMembers = await ctx.db
@@ -68,7 +58,7 @@ export const notificationsRouter = router({
           type: "announcement" as const,
           title: input.title,
           message: input.message,
-        }))
+        })),
       );
 
       return { ok: true, count: activeMembers.length };

@@ -31,9 +31,11 @@ describe("members.byId", () => {
 
   it("rejects an unknown id", async () => {
     const admin = await makeUser({ role: "admin" });
-    await expect(callerAs(admin).members.byId({ id: 999_999_999 })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+    await expect(callerAs(admin).members.byId({ id: 999_999_999 })).rejects.toMatchObject(
+      {
+        code: "NOT_FOUND",
+      },
+    );
   });
 });
 
@@ -42,7 +44,10 @@ describe("members.setActive / setRole", () => {
     const admin = await makeUser({ role: "admin" });
     const member = await makeUser();
 
-    const result = await callerAs(admin).members.setActive({ id: member.id, active: false });
+    const result = await callerAs(admin).members.setActive({
+      id: member.id,
+      active: false,
+    });
     expect(result?.active).toBe(false);
   });
 
@@ -50,7 +55,10 @@ describe("members.setActive / setRole", () => {
     const admin = await makeUser({ role: "admin" });
     const member = await makeUser();
 
-    const result = await callerAs(admin).members.setRole({ id: member.id, role: "trainer" });
+    const result = await callerAs(admin).members.setRole({
+      id: member.id,
+      role: "trainer",
+    });
     expect(result?.role).toBe("trainer");
   });
 });
@@ -60,7 +68,9 @@ describe("members.lookupByEmailOrPhone", () => {
     const staff = await makeUser({ role: "admin" });
     const member = await makeUser();
 
-    const result = await callerAs(staff).members.lookupByEmailOrPhone({ query: member.email });
+    const result = await callerAs(staff).members.lookupByEmailOrPhone({
+      query: member.email,
+    });
     expect(result.id).toBe(member.id);
   });
 

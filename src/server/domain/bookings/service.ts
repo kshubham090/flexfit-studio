@@ -141,7 +141,8 @@ export async function cancelMember(
     }
 
     const refundable =
-      hoursUntil(row.cls.startsAt) >= FREE_CANCELLATION_HOURS && row.booking.creditsUsed > 0;
+      hoursUntil(row.cls.startsAt) >= FREE_CANCELLATION_HOURS &&
+      row.booking.creditsUsed > 0;
 
     await tx
       .update(bookings)
@@ -207,7 +208,11 @@ export async function markMemberAttended(
   source: "front_desk" | "kiosk" | "app",
 ) {
   return db.transaction(async (tx) => {
-    const booking = await tx.select().from(bookings).where(eq(bookings.id, bookingId)).get();
+    const booking = await tx
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .get();
 
     if (!booking) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found." });
@@ -219,7 +224,10 @@ export async function markMemberAttended(
       });
     }
 
-    await tx.update(bookings).set({ status: "attended" }).where(eq(bookings.id, booking.id));
+    await tx
+      .update(bookings)
+      .set({ status: "attended" })
+      .where(eq(bookings.id, booking.id));
 
     await tx.insert(checkins).values({
       userId: booking.userId,

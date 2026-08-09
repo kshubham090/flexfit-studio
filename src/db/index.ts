@@ -7,8 +7,7 @@ const globalForDb = globalThis as unknown as {
 };
 
 const client =
-  globalForDb.client ??
-  createClient({ url: process.env.DB_FILE ?? "file:flexfit.db" });
+  globalForDb.client ?? createClient({ url: process.env.DB_FILE ?? "file:flexfit.db" });
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.client = client;

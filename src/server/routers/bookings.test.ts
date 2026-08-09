@@ -27,7 +27,9 @@ describe("bookings.book", () => {
 
   it("does not decrement credits for a plan with unlimited (999) credits", async () => {
     const user = await makeUser();
-    const membership = await makeMembership(user, { creditsRemaining: UNLIMITED_CREDITS });
+    const membership = await makeMembership(user, {
+      creditsRemaining: UNLIMITED_CREDITS,
+    });
     const cls = await makeClass({ capacity: 2, creditCost: 3 });
 
     await callerAs(user).bookings.book({ classId: cls.id });
@@ -66,9 +68,11 @@ describe("bookings.book", () => {
     const user = await makeUser();
     const cls = await makeClass();
 
-    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
+    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject(
+      {
+        code: "FORBIDDEN",
+      },
+    );
   });
 
   it("rejects booking with fewer credits than the class costs", async () => {
@@ -76,9 +80,11 @@ describe("bookings.book", () => {
     await makeMembership(user, { creditsRemaining: 1 });
     const cls = await makeClass({ creditCost: 2 });
 
-    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
+    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject(
+      {
+        code: "FORBIDDEN",
+      },
+    );
   });
 
   it("rejects a duplicate booking for a class the member is already on the list for", async () => {
@@ -88,9 +94,11 @@ describe("bookings.book", () => {
 
     await callerAs(user).bookings.book({ classId: cls.id });
 
-    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
+    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject(
+      {
+        code: "CONFLICT",
+      },
+    );
   });
 
   it("rejects booking a cancelled class", async () => {
@@ -98,9 +106,11 @@ describe("bookings.book", () => {
     await makeMembership(user, { creditsRemaining: 5 });
     const cls = await makeClass({ cancelled: true });
 
-    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
+    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject(
+      {
+        code: "BAD_REQUEST",
+      },
+    );
   });
 
   it("rejects booking a class that has already started", async () => {
@@ -108,9 +118,11 @@ describe("bookings.book", () => {
     await makeMembership(user, { creditsRemaining: 5 });
     const cls = await makeClass({ startsAt: hoursFromNow(-1) });
 
-    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
+    await expect(callerAs(user).bookings.book({ classId: cls.id })).rejects.toMatchObject(
+      {
+        code: "BAD_REQUEST",
+      },
+    );
   });
 });
 
@@ -158,7 +170,11 @@ describe("bookings.cancel", () => {
   });
 
   it("promotes the longest-waiting waitlisted member when a booked spot frees up", async () => {
-    const cls = await makeClass({ capacity: 1, creditCost: 1, startsAt: hoursFromNow(48) });
+    const cls = await makeClass({
+      capacity: 1,
+      creditCost: 1,
+      startsAt: hoursFromNow(48),
+    });
 
     const first = await makeUser();
     await makeMembership(first, { creditsRemaining: 5 });
@@ -172,7 +188,11 @@ describe("bookings.cancel", () => {
 
     await callerAs(first).bookings.cancel({ bookingId: firstBooking.id });
 
-    const promoted = await db.select().from(bookings).where(eq(bookings.id, secondBooking.id)).get();
+    const promoted = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, secondBooking.id))
+      .get();
     expect(promoted?.status).toBe("booked");
     expect(promoted?.creditsUsed).toBe(1);
 
@@ -195,10 +215,18 @@ describe("bookings.markAttended", () => {
     const admin = await makeUser({ role: "admin" });
     await callerAs(admin).bookings.markAttended({ bookingId: booking.id });
 
-    const updated = await db.select().from(bookings).where(eq(bookings.id, booking.id)).get();
+    const updated = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, booking.id))
+      .get();
     expect(updated?.status).toBe("attended");
 
-    const checkin = await db.select().from(checkins).where(eq(checkins.bookingId, booking.id)).get();
+    const checkin = await db
+      .select()
+      .from(checkins)
+      .where(eq(checkins.bookingId, booking.id))
+      .get();
     expect(checkin).toBeTruthy();
     expect(checkin?.userId).toBe(user.id);
   });

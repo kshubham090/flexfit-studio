@@ -47,11 +47,19 @@ export async function validateRescheduleRequest(
   const originalClass = originalRow.cls;
 
   if (originalBooking.userId !== userId) {
-    return { valid: false, code: "FORBIDDEN", reason: "You cannot reschedule this booking." };
+    return {
+      valid: false,
+      code: "FORBIDDEN",
+      reason: "You cannot reschedule this booking.",
+    };
   }
 
   if (originalBooking.status !== "booked" && originalBooking.status !== "waitlisted") {
-    return { valid: false, code: "BAD_REQUEST", reason: "This booking is no longer active." };
+    return {
+      valid: false,
+      code: "BAD_REQUEST",
+      reason: "This booking is no longer active.",
+    };
   }
 
   const hoursBeforeOriginal = hoursUntil(originalClass.startsAt);
@@ -63,7 +71,11 @@ export async function validateRescheduleRequest(
     };
   }
 
-  const targetClass = await db.select().from(classes).where(eq(classes.id, toClassId)).get();
+  const targetClass = await db
+    .select()
+    .from(classes)
+    .where(eq(classes.id, toClassId))
+    .get();
 
   if (!targetClass) {
     return { valid: false, code: "NOT_FOUND", reason: "Target class not found." };
@@ -78,15 +90,27 @@ export async function validateRescheduleRequest(
   }
 
   if (targetClass.id === originalClass.id) {
-    return { valid: false, code: "BAD_REQUEST", reason: "You are already booked for this class." };
+    return {
+      valid: false,
+      code: "BAD_REQUEST",
+      reason: "You are already booked for this class.",
+    };
   }
 
   if (hoursUntil(targetClass.startsAt) <= 0) {
-    return { valid: false, code: "BAD_REQUEST", reason: "This class has already started." };
+    return {
+      valid: false,
+      code: "BAD_REQUEST",
+      reason: "This class has already started.",
+    };
   }
 
   if (targetClass.cancelled) {
-    return { valid: false, code: "BAD_REQUEST", reason: "This class has been cancelled." };
+    return {
+      valid: false,
+      code: "BAD_REQUEST",
+      reason: "This class has been cancelled.",
+    };
   }
 
   const existingBooking = await db
@@ -132,7 +156,12 @@ export async function reschedule(
   toClassId: number,
 ) {
   return db.transaction(async (tx) => {
-    const validation = await validateRescheduleRequest(tx, userId, fromBookingId, toClassId);
+    const validation = await validateRescheduleRequest(
+      tx,
+      userId,
+      fromBookingId,
+      toClassId,
+    );
 
     if (!validation.valid) {
       throw new TRPCError({ code: validation.code, message: validation.reason });

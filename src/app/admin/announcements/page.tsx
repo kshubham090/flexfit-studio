@@ -66,7 +66,10 @@ export default function AnnouncementsPage() {
         </form>
 
         {success && (
-          <div className="mt-4 p-3 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}>
+          <div
+            className="mt-4 p-3 rounded"
+            style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
+          >
             <p style={{ color: "var(--accent)" }}>
               Announcement sent to {broadcast.data?.count || 0} members!
             </p>
@@ -74,7 +77,10 @@ export default function AnnouncementsPage() {
         )}
 
         {broadcast.error && (
-          <div className="mt-4 p-3 rounded" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}>
+          <div
+            className="mt-4 p-3 rounded"
+            style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+          >
             <p style={{ color: "#ef4444" }}>{broadcast.error.message}</p>
           </div>
         )}

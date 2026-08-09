@@ -36,18 +36,20 @@ export const corporateBookingsRouter = router({
         .orderBy(asc(classes.startsAt));
 
       const now = new Date();
-      return rows.filter((r) =>
-        input.includePast ? true : new Date(r.startsAt) >= now,
-      );
+      return rows.filter((r) => (input.includePast ? true : new Date(r.startsAt) >= now));
     }),
 
   book: protectedProcedure
     .input(z.object({ classId: z.number() }))
-    .mutation(async ({ ctx, input }) => bookCorporate(ctx.db, ctx.user.id, input.classId)),
+    .mutation(async ({ ctx, input }) =>
+      bookCorporate(ctx.db, ctx.user.id, input.classId),
+    ),
 
   cancel: protectedProcedure
     .input(z.object({ bookingId: z.number() }))
-    .mutation(async ({ ctx, input }) => cancelCorporate(ctx.db, input.bookingId, ctx.user)),
+    .mutation(async ({ ctx, input }) =>
+      cancelCorporate(ctx.db, input.bookingId, ctx.user),
+    ),
 
   markAttended: staffProcedure
     .input(

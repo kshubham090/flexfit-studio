@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, gte, sql, lte, desc, inArray } from "drizzle-orm";
+import { and, eq, gte, sql, lte, inArray } from "drizzle-orm";
 import {
   users,
   memberships,
@@ -25,10 +25,7 @@ export const adminRouter = router({
       .select({ activeMemberships: sql<number>`count(*)` })
       .from(memberships)
       .where(
-        and(
-          eq(memberships.status, "active"),
-          sql`${memberships.endDate} >= ${today}`,
-        ),
+        and(eq(memberships.status, "active"), sql`${memberships.endDate} >= ${today}`),
       );
 
     const [{ upcomingClasses }] = await ctx.db
@@ -240,7 +237,9 @@ export const adminRouter = router({
       )
       .orderBy(sql`${classes.startsAt} DESC`);
 
-    const trainerIds = [...new Set(rows.map((r) => r.trainerId).filter((id) => id != null))];
+    const trainerIds = [
+      ...new Set(rows.map((r) => r.trainerId).filter((id) => id != null)),
+    ];
     const trainers = new Map<number | null, string>();
 
     if (trainerIds.length > 0) {

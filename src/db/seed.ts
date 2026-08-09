@@ -167,8 +167,7 @@ async function seed() {
       endDate: dateOnly(started + plan.durationDays),
       creditsRemaining: plan.classCredits === 999 ? 999 : plan.classCredits - (i % 4),
       status: (started + plan.durationDays < 0 ? "expired" : "active") as
-        | "expired"
-        | "active",
+        "expired" | "active",
     };
   });
 
@@ -322,7 +321,8 @@ async function seed() {
       userId: members[0].id,
       type: "waitlist_promotion" as const,
       title: "You've been promoted!",
-      message: "You have been promoted from the waitlist to a confirmed spot for Sunrise Yoga.",
+      message:
+        "You have been promoted from the waitlist to a confirmed spot for Sunrise Yoga.",
       read: false,
     },
     {
@@ -350,7 +350,8 @@ async function seed() {
       userId: members[0].id,
       type: "announcement" as const,
       title: "Studio maintenance",
-      message: "Studio A will be closed for maintenance on Jul 29. All classes have been rescheduled.",
+      message:
+        "Studio A will be closed for maintenance on Jul 29. All classes have been rescheduled.",
       read: false,
     },
   ];

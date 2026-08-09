@@ -47,7 +47,7 @@ deliberately with the change noted here -- never fixed silently.
    `corporateBookings.book`'s fullness check only counts rows in
    `corporateBookings`; `bookings.book`'s check only counts rows in
    `bookings`. A class with `capacity: 10` can end up with 10 member
-   bookings *and* 10 corporate bookings simultaneously -- `capacity` is
+   bookings _and_ 10 corporate bookings simultaneously -- `capacity` is
    enforced per booking channel, not per class.
 
 3. **Corporate check-ins are invisible to `checkinCountFor`.**
@@ -62,7 +62,7 @@ deliberately with the change noted here -- never fixed silently.
    `announcement` -- only `announcement` (via `notifications.broadcast`,
    admin-triggered) is ever inserted anywhere in the routers.
    `src/db/seed.ts` hand-inserts one static example of each of the other
-   three types as fixture data, so a freshly seeded DB *looks* like the
+   three types as fixture data, so a freshly seeded DB _looks_ like the
    notification system is fully wired up (the notifications page shows one
    of each type) -- but nothing after seeding ever generates a new one.
    Confirmed by reading seed.ts, not just the routers: without checking the
@@ -120,7 +120,7 @@ confirmed against real, running code, not just inferred from reading it.
 
 One correction made along the way: my first pass at the corporate
 waitlist-promotion test assumed a refund-then-repromote nets to zero. The
-actual code re-reads the company's balance *after* the refund lands, so the
+actual code re-reads the company's balance _after_ the refund lands, so the
 cancelled booking's cost fully round-trips and only the promoted booking's
 cost has a lasting effect on the pool. Fixed the test's expectation, not
 the code -- this was my modeling error, not a bug.
@@ -150,12 +150,12 @@ current behavior. Remaining real gaps, by choice, not oversight:
   -- confirmed empirically (not assumed): both call `next/headers`'s
   `cookies()` directly inside the procedure body, not just via
   `createContext`, which throws `cookies() was called outside a request
-  scope` outside a real Next.js request. Would need either an HTTP-level
+scope` outside a real Next.js request. Would need either an HTTP-level
   test against a running server or mocking `next/headers`. Not attempted;
   `auth.register`/`auth.me` (no `cookies()` call) are covered instead.
 - **`admin.ts`'s reporting queries** (stats, revenueByMonth, topTrainers,
   etc.) and **`notifications.broadcast`'s exact returned count** are
-  read-only or reflect the *entire* shared test database rather than one
+  read-only or reflect the _entire_ shared test database rather than one
   test's own data, so they're awkward to assert on precisely without
   either a dedicated clean DB per test or asserting only on relative/
   own-data effects (see `notifications.broadcast`'s test for the pattern

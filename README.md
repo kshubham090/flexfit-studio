@@ -27,18 +27,18 @@ That gets you a populated studio at http://localhost:3000 with a couple of weeks
 
 ## Signing in
 
-| Role    | Email                  | Password   |
-| ------- | ---------------------- | ---------- |
-| Admin   | admin@flexfit.test     | admin123   |
-| Trainer | arjun@flexfit.test     | trainer123 |
-| Member  | rahul.k@example.com    | member123  |
+| Role    | Email               | Password   |
+| ------- | ------------------- | ---------- |
+| Admin   | admin@flexfit.test  | admin123   |
+| Trainer | arjun@flexfit.test  | trainer123 |
+| Member  | rahul.k@example.com | member123  |
 
 Every seeded member uses `member123`. The other member emails are in `src/db/seed.ts`.
 
 ## Commands
 
-| Command         | What it does                                      |
-| --------------- | ------------------------------------------------- |
+| Command         | What it does                                       |
+| --------------- | -------------------------------------------------- |
 | `pnpm dev`      | Development server on port 3000                    |
 | `pnpm build`    | Production build                                   |
 | `pnpm db:push`  | Apply the schema in `src/db/schema.ts`             |
@@ -85,7 +85,7 @@ documents/        restructuring notes, findings, decisions
 ## Structural decisions and why
 
 This codebase was restructured with one hard constraint: **behavior had to
-stay identical**, verified by characterization tests written *before* any
+stay identical**, verified by characterization tests written _before_ any
 code moved, not after. The full narrative is in `documents/`:
 
 - **`day1-discovery-notes.md`** -- the domain model and cross-domain flows

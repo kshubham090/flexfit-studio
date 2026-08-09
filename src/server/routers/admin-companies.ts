@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import {
   companies,
   companyMembers,

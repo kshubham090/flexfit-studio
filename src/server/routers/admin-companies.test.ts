@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { companies } from "@/db/schema";
 import { callerAs } from "@/test/caller";
@@ -25,7 +25,10 @@ describe("adminCompanies.linkMember", () => {
     const trainer = await makeUser({ role: "trainer" });
 
     await expect(
-      callerAs(admin).adminCompanies.linkMember({ companyId: company.id, userId: trainer.id }),
+      callerAs(admin).adminCompanies.linkMember({
+        companyId: company.id,
+        userId: trainer.id,
+      }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
@@ -34,10 +37,16 @@ describe("adminCompanies.linkMember", () => {
     const company = await makeCompany();
     const member = await makeUser();
 
-    await callerAs(admin).adminCompanies.linkMember({ companyId: company.id, userId: member.id });
+    await callerAs(admin).adminCompanies.linkMember({
+      companyId: company.id,
+      userId: member.id,
+    });
 
     await expect(
-      callerAs(admin).adminCompanies.linkMember({ companyId: company.id, userId: member.id }),
+      callerAs(admin).adminCompanies.linkMember({
+        companyId: company.id,
+        userId: member.id,
+      }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 

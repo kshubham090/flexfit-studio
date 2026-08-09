@@ -3,7 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { companies } from "@/db/schema";
 import { callerAs } from "@/test/caller";
-import { makeUser, makeMembership, makeClass, makeCompany, linkCompanyMember } from "@/test/fixtures";
+import {
+  makeUser,
+  makeMembership,
+  makeClass,
+  makeCompany,
+  linkCompanyMember,
+} from "@/test/fixtures";
 
 describe("corporateBookings.book", () => {
   it("spends the company credit pool instead of a personal membership", async () => {
@@ -15,7 +21,11 @@ describe("corporateBookings.book", () => {
     const result = await callerAs(employee).corporateBookings.book({ classId: cls.id });
 
     expect(result.status).toBe("booked");
-    const updatedCompany = await db.select().from(companies).where(eq(companies.id, company.id)).get();
+    const updatedCompany = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.id, company.id))
+      .get();
     expect(updatedCompany?.creditPoolBalance).toBe(7);
   });
 
@@ -47,7 +57,9 @@ describe("corporateBookings.book", () => {
       const company = await makeCompany({ creditPoolBalance: 10 });
       const employee = await makeUser();
       await linkCompanyMember(employee, company.id);
-      const corporateBooking = await callerAs(employee).corporateBookings.book({ classId: cls.id });
+      const corporateBooking = await callerAs(employee).corporateBookings.book({
+        classId: cls.id,
+      });
 
       expect(corporateBooking.status).toBe("booked");
       // Class capacity was 1; two independent "booked" rows now exist for it
@@ -65,16 +77,24 @@ describe("corporateBookings.cancel", () => {
 
     const first = await makeUser();
     await linkCompanyMember(first, company.id);
-    const firstBooking = await callerAs(first).corporateBookings.book({ classId: cls.id });
+    const firstBooking = await callerAs(first).corporateBookings.book({
+      classId: cls.id,
+    });
 
     const second = await makeUser();
     await linkCompanyMember(second, company.id);
-    const secondBooking = await callerAs(second).corporateBookings.book({ classId: cls.id });
+    const secondBooking = await callerAs(second).corporateBookings.book({
+      classId: cls.id,
+    });
     expect(secondBooking.status).toBe("waitlisted");
 
     await callerAs(first).corporateBookings.cancel({ bookingId: firstBooking.id });
 
-    const companyAfter = await db.select().from(companies).where(eq(companies.id, company.id)).get();
+    const companyAfter = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.id, company.id))
+      .get();
     // Pool: 10 -(book first, 2)-> 8 -(refund on cancel, +2)-> 10 -(promote
     // second, -2)-> 8. The refund and the promotion charge are sequential
     // updates against the company's balance at each point in time (the
@@ -95,7 +115,9 @@ describe("corporateBookings.markAttended", () => {
       const company = await makeCompany({ creditPoolBalance: 10 });
       const employee = await makeUser();
       await linkCompanyMember(employee, company.id);
-      const booking = await callerAs(employee).corporateBookings.book({ classId: cls.id });
+      const booking = await callerAs(employee).corporateBookings.book({
+        classId: cls.id,
+      });
 
       const admin = await makeUser({ role: "admin" });
       await callerAs(admin).corporateBookings.markAttended({ bookingId: booking.id });
