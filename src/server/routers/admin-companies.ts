@@ -190,6 +190,24 @@ export const adminCompaniesRouter = router({
         });
       }
 
+      // Fixes documents/day1-discovery-notes.md finding 8: a member could
+      // previously be linked to more than one active company at once, and
+      // corporate-booking time picked whichever an unordered query happened
+      // to return first. See documents/day4-fix-and-log-notes.md.
+      const existingActiveLink = await ctx.db
+        .select({ companyId: companyMembers.companyId })
+        .from(companyMembers)
+        .innerJoin(companies, eq(companyMembers.companyId, companies.id))
+        .where(and(eq(companyMembers.userId, input.userId), eq(companies.active, true)))
+        .get();
+
+      if (existingActiveLink) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This member is already linked to another active company.",
+        });
+      }
+
       return ctx.db
         .insert(companyMembers)
         .values({

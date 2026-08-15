@@ -100,6 +100,13 @@ export const checkins = sqliteTable("checkins", {
     .notNull()
     .references(() => users.id),
   bookingId: integer("booking_id").references(() => bookings.id),
+  // Added to fix documents/day1-discovery-notes.md finding 3: corporate
+  // check-ins previously had no way to be linked back to a class at all
+  // (bookingId is always null for them), so bookings.checkinCountFor could
+  // never see them. See documents/day4-fix-and-log-notes.md.
+  corporateBookingId: integer("corporate_booking_id").references(
+    () => corporateBookings.id,
+  ),
   checkedInAt: text("checked_in_at")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

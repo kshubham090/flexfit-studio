@@ -3,6 +3,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { bookings, classes, reschedules, type Booking, type GymClass } from "@/db/schema";
 import { hoursUntil } from "../shared/time";
 import type { AnyDb } from "../shared/db";
+import { combinedBookedCount } from "../shared/capacity";
+import { promoteNextWaitlisted } from "../bookings/service";
 import { FREE_RESCHEDULE_HOURS } from "./policy";
 
 type DbClient = typeof import("@/db").db;
@@ -133,21 +135,22 @@ export async function validateRescheduleRequest(
     };
   }
 
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(bookings)
-    .where(and(eq(bookings.classId, targetClass.id), eq(bookings.status, "booked")));
-
-  const targetIsFull = Number(count) >= targetClass.capacity;
+  // Shared with bookMember/bookCorporate -- capacity is checked across both
+  // channels now, see documents/day1-discovery-notes.md finding 2 (fixed).
+  const count = await combinedBookedCount(db, targetClass.id);
+  const targetIsFull = count >= targetClass.capacity;
 
   return { valid: true, originalBooking, originalClass, targetClass, targetIsFull };
 }
 
 /**
  * Cancels the original booking directly (not via domain/bookings'
- * cancelMember), so it does NOT trigger waitlist promotion on the vacated
- * class -- documents/day1-discovery-notes.md finding 1. Preserved exactly;
- * not a silent fix.
+ * cancelMember, whose other checks -- ownership, status -- are already
+ * covered by validateRescheduleRequest above), but now also calls the same
+ * promoteNextWaitlisted helper cancelMember uses, so a booked-then-vacated
+ * class's waitlist gets promoted here too -- fixes
+ * documents/day1-discovery-notes.md finding 1. See
+ * documents/day4-fix-and-log-notes.md.
  */
 export async function reschedule(
   db: DbClient,
@@ -187,6 +190,12 @@ export async function reschedule(
       .update(bookings)
       .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
       .where(eq(bookings.id, originalBooking.id));
+
+    // Freeing a confirmed spot promotes the member who has waited longest
+    // on the class being left, same as a direct cancel.
+    if (originalBooking.status === "booked") {
+      await promoteNextWaitlisted(tx, originalClass.id, originalClass.creditCost);
+    }
 
     await tx.insert(reschedules).values({
       userId,

@@ -77,9 +77,9 @@ describe("reschedules.reschedule", () => {
   });
 
   it(
-    "CHARACTERIZES A GAP (see documents/day1-discovery-notes.md, finding 1): " +
-      "rescheduling out of a full class does NOT promote the class's waitlist, " +
-      "unlike a direct cancel",
+    "FIXED (see documents/day1-discovery-notes.md finding 1, " +
+      "documents/day4-fix-and-log-notes.md): rescheduling out of a full " +
+      "class now promotes the class's waitlist, same as a direct cancel",
     async () => {
       const fromClass = await makeClass({
         name: "Yoga",
@@ -111,15 +111,12 @@ describe("reschedules.reschedule", () => {
         toClassId: toClass.id,
       });
 
-      const stillWaitlisted = await db
+      const promoted = await db
         .select()
         .from(bookings)
         .where(eq(bookings.id, waitlistedBooking.id))
         .get();
-      // If this ever comes back "booked", reschedule has been made
-      // consistent with cancel's promotion behavior -- update discovery
-      // notes finding 1 rather than adjusting this expectation.
-      expect(stillWaitlisted?.status).toBe("waitlisted");
+      expect(promoted?.status).toBe("booked");
     },
   );
 });

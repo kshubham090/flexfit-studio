@@ -84,9 +84,9 @@ describe("trainers.checkAvailability", () => {
   });
 
   it(
-    "CHARACTERIZES A GAP (see documents/day1-discovery-notes.md, finding 9): " +
-      "classes.create has no availability guard, so a class classes.checkAvailability " +
-      "would flag as a conflict can still be created",
+    "FIXED (see documents/day1-discovery-notes.md finding 9, " +
+      "documents/day4-fix-and-log-notes.md): classes.create now enforces " +
+      "the same availability check classes.checkAvailability computes",
     async () => {
       const trainer = await makeUser({ role: "trainer" });
       await callerAs(trainer).trainers.setAvailability({
@@ -108,19 +108,61 @@ describe("trainers.checkAvailability", () => {
       });
       expect(check.available).toBe(false);
 
-      // classes.create doesn't call checkAvailability at all -- this
-      // succeeds despite the exact conflict just confirmed above. If this
-      // ever starts throwing, finding 9 has been fixed -- update discovery
-      // notes rather than adjusting this expectation.
-      const created = await callerAs(admin).classes.create({
-        name: "Double-booked class",
-        room: "Studio B",
-        capacity: 5,
-        trainerId: trainer.id,
-        startsAt: FIXED_STARTS_AT,
-        durationMin: 60,
-      });
-      expect(created.id).toBeDefined();
+      await expect(
+        callerAs(admin).classes.create({
+          name: "Double-booked class",
+          room: "Studio B",
+          capacity: 5,
+          trainerId: trainer.id,
+          startsAt: FIXED_STARTS_AT,
+          durationMin: 60,
+        }),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
     },
   );
+
+  it("rejects classes.update when the patch would create a trainer conflict", async () => {
+    const trainer = await makeUser({ role: "trainer" });
+    await callerAs(trainer).trainers.setAvailability({
+      dayOfWeek: DAY_OF_WEEK,
+      startTime: "08:00",
+      endTime: "18:00",
+    });
+    await makeClass({ trainerId: trainer.id, startsAt: FIXED_STARTS_AT, durationMin: 60 });
+
+    const admin = await makeUser({ role: "admin" });
+    const otherClass = await makeClass({ room: "Studio C" });
+
+    await expect(
+      callerAs(admin).classes.update({
+        id: otherClass.id,
+        trainerId: trainer.id,
+        startsAt: FIXED_STARTS_AT,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("allows classes.update to touch a class's own trainer/time without self-conflicting", async () => {
+    const trainer = await makeUser({ role: "trainer" });
+    await callerAs(trainer).trainers.setAvailability({
+      dayOfWeek: DAY_OF_WEEK,
+      startTime: "08:00",
+      endTime: "18:00",
+    });
+    const admin = await makeUser({ role: "admin" });
+    const cls = await callerAs(admin).classes.create({
+      name: "Original",
+      room: "Studio B",
+      capacity: 5,
+      trainerId: trainer.id,
+      startsAt: FIXED_STARTS_AT,
+      durationMin: 60,
+    });
+
+    const updated = await callerAs(admin).classes.update({
+      id: cls.id,
+      capacity: 6,
+    });
+    expect(updated.capacity).toBe(6);
+  });
 });

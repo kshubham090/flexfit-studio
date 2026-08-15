@@ -4,6 +4,7 @@ import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { classes, bookings, users } from "@/db/schema";
 import { router, publicProcedure, staffProcedure, adminProcedure } from "../trpc";
 import { cancelClass } from "../domain/classes/service";
+import { checkTrainerAvailability } from "../domain/shared/trainerAvailability";
 
 export const classesRouter = router({
   list: publicProcedure
@@ -93,6 +94,22 @@ export const classesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Fixes documents/day1-discovery-notes.md finding 9: trainer
+      // availability used to be advisory only -- trainers.checkAvailability
+      // computed a real conflict check, but nothing called it here. See
+      // documents/day4-fix-and-log-notes.md.
+      if (input.trainerId != null) {
+        const availability = await checkTrainerAvailability(
+          ctx.db,
+          input.trainerId,
+          input.startsAt,
+          input.durationMin,
+        );
+        if (!availability.available) {
+          throw new TRPCError({ code: "CONFLICT", message: availability.reason });
+        }
+      }
+
       return ctx.db
         .insert(classes)
         .values({
@@ -117,6 +134,31 @@ export const classesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...patch } = input;
+
+      const current = await ctx.db.select().from(classes).where(eq(classes.id, id)).get();
+      if (!current) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });
+      }
+
+      // Same fix as classes.create (finding 9) -- re-check availability
+      // against whatever the trainer/start time will be after this patch,
+      // excluding this class itself from the conflict check.
+      const effectiveTrainerId =
+        patch.trainerId !== undefined ? patch.trainerId : current.trainerId;
+      const effectiveStartsAt = patch.startsAt ?? current.startsAt;
+      if (effectiveTrainerId != null) {
+        const availability = await checkTrainerAvailability(
+          ctx.db,
+          effectiveTrainerId,
+          effectiveStartsAt,
+          current.durationMin,
+          id,
+        );
+        if (!availability.available) {
+          throw new TRPCError({ code: "CONFLICT", message: availability.reason });
+        }
+      }
+
       const updated = await ctx.db
         .update(classes)
         .set(patch)

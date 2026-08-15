@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { companies } from "@/db/schema";
+import { companies, checkins } from "@/db/schema";
 import { callerAs } from "@/test/caller";
 import {
   makeUser,
@@ -39,9 +39,10 @@ describe("corporateBookings.book", () => {
   });
 
   it(
-    "CHARACTERIZES A GAP: capacity is checked per booking table, so a class's " +
-      "capacity can be exceeded when both personal and corporate members book it " +
-      "(see documents/day1-discovery-notes.md, finding 2)",
+    "FIXED (see documents/day1-discovery-notes.md finding 2, " +
+      "documents/day4-fix-and-log-notes.md): capacity is now shared across " +
+      "both booking channels, so a personal booking counts against a " +
+      "corporate booking's fullness check on the same class",
     async () => {
       const cls = await makeClass({ capacity: 1, creditCost: 1 });
 
@@ -51,9 +52,8 @@ describe("corporateBookings.book", () => {
       const memberBooking = await callerAs(member).bookings.book({ classId: cls.id });
       expect(memberBooking.status).toBe("booked");
 
-      // Corporate booking's fullness check only counts corporateBookings rows,
-      // so it does not see the personal booking above and also books instead
-      // of waitlisting -- this is the actual current behavior being locked in.
+      // Corporate booking's fullness check now counts both tables, so it
+      // sees the personal booking above and waitlists instead of booking.
       const company = await makeCompany({ creditPoolBalance: 10 });
       const employee = await makeUser();
       await linkCompanyMember(employee, company.id);
@@ -61,11 +61,7 @@ describe("corporateBookings.book", () => {
         classId: cls.id,
       });
 
-      expect(corporateBooking.status).toBe("booked");
-      // Class capacity was 1; two independent "booked" rows now exist for it
-      // across the two tables. If this test ever fails because status came
-      // back "waitlisted", the capacity-sharing gap has been fixed -- update
-      // discovery notes finding 2 rather than "fixing" this test blindly.
+      expect(corporateBooking.status).toBe("waitlisted");
     },
   );
 });
@@ -107,9 +103,10 @@ describe("corporateBookings.cancel", () => {
 
 describe("corporateBookings.markAttended", () => {
   it(
-    "CHARACTERIZES A GAP: records a checkin with no bookingId, so " +
-      "bookings.checkinCountFor never counts corporate attendees " +
-      "(see documents/day1-discovery-notes.md, finding 3)",
+    "FIXED (see documents/day1-discovery-notes.md finding 3, " +
+      "documents/day4-fix-and-log-notes.md): records a checkin with " +
+      "corporateBookingId set, so bookings.checkinCountFor now counts " +
+      "corporate attendees too",
     async () => {
       const cls = await makeClass({ capacity: 2 });
       const company = await makeCompany({ creditPoolBalance: 10 });
@@ -123,7 +120,36 @@ describe("corporateBookings.markAttended", () => {
       await callerAs(admin).corporateBookings.markAttended({ bookingId: booking.id });
 
       const count = await callerAs(admin).bookings.checkinCountFor({ classId: cls.id });
-      expect(count.count).toBe(0); // the corporate check-in is invisible here
+      expect(count.count).toBe(1);
+    },
+  );
+
+  it(
+    "persists the source it's given (finding 12, previously silently " +
+      "discarded -- see documents/day4-fix-and-log-notes.md)",
+    async () => {
+      const cls = await makeClass({ capacity: 2 });
+      const company = await makeCompany({ creditPoolBalance: 10 });
+      const employee = await makeUser();
+      await linkCompanyMember(employee, company.id);
+      const booking = await callerAs(employee).corporateBookings.book({
+        classId: cls.id,
+      });
+
+      const admin = await makeUser({ role: "admin" });
+      await callerAs(admin).corporateBookings.markAttended({
+        bookingId: booking.id,
+        source: "kiosk",
+      });
+
+      const checkin = await db
+        .select()
+        .from(checkins)
+        .where(
+          and(eq(checkins.corporateBookingId, booking.id), eq(checkins.userId, employee.id)),
+        )
+        .get();
+      expect(checkin?.source).toBe("kiosk");
     },
   );
 });

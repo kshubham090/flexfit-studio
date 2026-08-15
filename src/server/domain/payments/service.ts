@@ -1,13 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
-import { payments, memberships } from "@/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
+import { payments, memberships, bookings, classes } from "@/db/schema";
+import { promoteNextWaitlisted } from "../bookings/service";
 
 type DbClient = typeof import("@/db").db;
 
 /**
- * Marks a payment refunded and cancels its associated membership. Does NOT
- * touch any bookings made with that membership's credits -- see
- * documents/day1-discovery-notes.md finding 7. Preserved exactly.
+ * Marks a payment refunded, cancels its associated membership, and now also
+ * cancels any of that membership's still-active bookings -- fixes
+ * documents/day1-discovery-notes.md finding 7: bookings used to stay
+ * "booked"/"waitlisted" against a membership that's no longer active. A
+ * booking that was actually holding a confirmed spot promotes that class's
+ * waitlist on the way out, same as any other cancellation. Credits are not
+ * refunded back onto the membership being cancelled -- there is no active
+ * membership left to credit. See documents/day4-fix-and-log-notes.md.
  */
 export async function refundPayment(db: DbClient, paymentId: number) {
   return db.transaction(async (tx) => {
@@ -35,6 +41,30 @@ export async function refundPayment(db: DbClient, paymentId: number) {
         .update(memberships)
         .set({ status: "cancelled" })
         .where(eq(memberships.id, row.membershipId));
+
+      const affectedBookings = await tx
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.membershipId, row.membershipId),
+            inArray(bookings.status, ["booked", "waitlisted"]),
+          ),
+        );
+
+      for (const booking of affectedBookings) {
+        await tx
+          .update(bookings)
+          .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
+          .where(eq(bookings.id, booking.id));
+
+        if (booking.status === "booked") {
+          const cls = await tx.select().from(classes).where(eq(classes.id, booking.classId)).get();
+          if (cls) {
+            await promoteNextWaitlisted(tx, cls.id, cls.creditCost);
+          }
+        }
+      }
     }
 
     return updated;

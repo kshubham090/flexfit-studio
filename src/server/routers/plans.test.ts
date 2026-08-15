@@ -48,30 +48,26 @@ describe("plans.subscribe", () => {
   });
 
   it(
-    "CHARACTERIZES A GAP (see documents/day1-discovery-notes.md, finding 6): " +
-      "subscribing twice leaves two simultaneous active memberships, and " +
-      "booking picks whichever has the later endDate -- the other's credits " +
-      "become unreachable, not merged or flagged",
+    "FIXED (see documents/day1-discovery-notes.md finding 6, " +
+      "documents/day4-fix-and-log-notes.md): subscribing while already " +
+      "holding an active membership is now rejected instead of silently " +
+      "creating a second one",
     async () => {
       const user = await makeUser();
       const shortPlan = await makePlan({ durationDays: 10, classCredits: 3 });
       const longPlan = await makePlan({ durationDays: 60, classCredits: 20 });
 
-      const first = await callerAs(user).plans.subscribe({ planId: shortPlan.id });
-      const second = await callerAs(user).plans.subscribe({ planId: longPlan.id });
+      await callerAs(user).plans.subscribe({ planId: shortPlan.id });
+
+      await expect(
+        callerAs(user).plans.subscribe({ planId: longPlan.id }),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
 
       const allMemberships = await db
         .select()
         .from(memberships)
         .where(eq(memberships.userId, user.id));
-      expect(allMemberships).toHaveLength(2);
-      expect(allMemberships.every((m) => m.status === "active")).toBe(true);
-
-      // Both memberships are independently active; nothing merges or flags
-      // this. If this test ever starts failing because subscribe() now
-      // rejects a second active membership, finding 6 has been fixed --
-      // update discovery notes rather than adjusting this expectation.
-      expect(first.id).not.toBe(second.id);
+      expect(allMemberships).toHaveLength(1);
     },
   );
 });

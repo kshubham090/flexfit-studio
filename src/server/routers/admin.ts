@@ -8,6 +8,7 @@ import {
   payments,
   checkins,
   membershipPlans,
+  notifications,
 } from "@/db/schema";
 import { router, adminProcedure } from "../trpc";
 
@@ -146,6 +147,54 @@ export const adminRouter = router({
       .orderBy(memberships.endDate);
 
     return rows;
+  }),
+
+  // Fixes documents/day1-discovery-notes.md finding 4's third gap:
+  // membership_expiring was defined but nothing ever created one --
+  // expiringMemberships above is read-only, not a trigger. There's no
+  // background-job/cron infrastructure in this app, so rather than fake
+  // one, this is an explicit admin-triggered action that creates a real
+  // notification for each currently-expiring member, mirroring the same
+  // admin-triggered pattern notifications.broadcast already uses for
+  // "announcement". Logged as a deliberate scope decision, not a full
+  // "run automatically every day" fix -- see
+  // documents/day4-fix-and-log-notes.md.
+  sendExpiryReminders: adminProcedure.mutation(async ({ ctx }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const in14Days = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    const rows = await ctx.db
+      .select({
+        userId: memberships.userId,
+        planName: membershipPlans.name,
+        expiresAt: memberships.endDate,
+      })
+      .from(memberships)
+      .innerJoin(membershipPlans, eq(memberships.planId, membershipPlans.id))
+      .where(
+        and(
+          eq(memberships.status, "active"),
+          gte(memberships.endDate, today),
+          lte(memberships.endDate, in14Days),
+        ),
+      );
+
+    if (rows.length === 0) {
+      return { ok: true, count: 0 };
+    }
+
+    await ctx.db.insert(notifications).values(
+      rows.map((r) => ({
+        userId: r.userId,
+        type: "membership_expiring" as const,
+        title: "Your membership is expiring soon",
+        message: `Your ${r.planName} membership expires on ${r.expiresAt}. Renew to keep booking classes.`,
+      })),
+    );
+
+    return { ok: true, count: rows.length };
   }),
 
   refundCount: adminProcedure.query(async ({ ctx }) => {

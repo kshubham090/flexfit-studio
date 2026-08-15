@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { memberships, bookings } from "@/db/schema";
 import { callerAs } from "@/test/caller";
-import { makeUser, makePlan, makeClass } from "@/test/fixtures";
+import { makeUser, makePlan, makeClass, makeMembership } from "@/test/fixtures";
 
 async function subscribeAndGetPayment(user: Awaited<ReturnType<typeof makeUser>>) {
   const plan = await makePlan({ classCredits: 5 });
@@ -44,9 +44,9 @@ describe("payments.refund", () => {
   });
 
   it(
-    "CHARACTERIZES A GAP (see documents/day1-discovery-notes.md, finding 7): " +
-      "refunding a payment cancels the membership but does not touch any " +
-      "bookings already made with that membership's credits",
+    "FIXED (see documents/day1-discovery-notes.md finding 7, " +
+      "documents/day4-fix-and-log-notes.md): refunding a payment now also " +
+      "cancels bookings made with that membership's credits",
     async () => {
       const user = await makeUser();
       const { membership, payment } = await subscribeAndGetPayment(user);
@@ -69,11 +69,36 @@ describe("payments.refund", () => {
         .from(bookings)
         .where(eq(bookings.id, booking.id))
         .get();
-      // Still "booked" against a membership that's no longer active. If
-      // this ever comes back "cancelled", the gap has been fixed --
-      // update discovery notes finding 7 rather than adjusting this
-      // expectation.
-      expect(bookingAfter?.status).toBe("booked");
+      expect(bookingAfter?.status).toBe("cancelled");
+    },
+  );
+
+  it(
+    "promotes the class's waitlist when a refund cancels a booked (not " +
+      "just waitlisted) spot",
+    async () => {
+      const user = await makeUser();
+      const { payment } = await subscribeAndGetPayment(user);
+      const cls = await makeClass({ capacity: 1, creditCost: 1 });
+      const booking = await callerAs(user).bookings.book({ classId: cls.id });
+      expect(booking.status).toBe("booked");
+
+      const waitlistedUser = await makeUser();
+      await makeMembership(waitlistedUser, { creditsRemaining: 5 });
+      const waitlistedBooking = await callerAs(waitlistedUser).bookings.book({
+        classId: cls.id,
+      });
+      expect(waitlistedBooking.status).toBe("waitlisted");
+
+      const admin = await makeUser({ role: "admin" });
+      await callerAs(admin).payments.refund({ id: payment.id });
+
+      const promoted = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, waitlistedBooking.id))
+        .get();
+      expect(promoted?.status).toBe("booked");
     },
   );
 });

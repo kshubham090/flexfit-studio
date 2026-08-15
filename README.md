@@ -90,11 +90,12 @@ code moved, not after. The full narrative is in `documents/`:
 
 - **`day1-discovery-notes.md`** -- the domain model and cross-domain flows
   as found by reading the code, plus every behavioral inconsistency found
-  along the way (10+ findings, several of them real bugs -- e.g. admin
-  class-cancellation never refunds member credits, never touches
-  waitlisted or corporate bookings, and never notifies anyone). Each is
-  documented and locked in by a test rather than fixed silently, per the
-  rule: fix-and-log or leave-and-document, never fix-and-forget.
+  along the way (12 findings originally, since grown to 14 -- see
+  `day4-fix-and-log-notes.md`). Each was documented and locked in by a test
+  rather than fixed silently at the time, per the rule: fix-and-log or
+  leave-and-document, never fix-and-forget. Findings 1-9 and 12 are now
+  actually fixed (day4); 10 and 11 were safe structural cleanups fixed
+  immediately during day2; 14 is still deliberately open.
 - **`day2-restructuring-notes.md`** -- the `src/server/domain/<feature>/`
   layer this restructuring introduced, and why: routers were doing input
   validation, auth, business logic, and DB access all in one file: business
@@ -111,6 +112,17 @@ code moved, not after. The full narrative is in `documents/`:
   `db.transaction()` -- confirmed working against this project's local
   libsql setup by the full test suite staying green through the change,
   not assumed.
+- **`day4-fix-and-log-notes.md`** -- the "future, separate pass" day1
+  explicitly deferred: findings 1-9 and 12 (all except the two safe
+  structural cleanups) are now actually fixed, each with the product
+  decision it required written down at the point it was made, and every
+  characterization test that locked in the old behavior flipped to lock in
+  the new one instead of being deleted. Also documents two more findings
+  (13, 14) surfaced while doing this pass -- one fixed, one deliberately
+  left open with the reasoning for not guessing at a fix under time
+  pressure. The "behavior must stay identical" constraint above describes
+  the day1-3 restructuring; this pass is explicitly the opposite of that
+  by design -- it changes behavior, on purpose, with each change logged.
 
 Every step of the restructuring was typechecked and run against the full
 characterization suite **with zero test-file edits** -- the guarantee that

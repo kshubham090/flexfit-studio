@@ -18,10 +18,12 @@ import {
 } from "@/test/fixtures";
 
 describe(
-  "classes.cancel -- CHARACTERIZES A GAP (see documents/day1-discovery-notes.md, finding 5): " +
-    "admin cancelling a class only touches 'booked' rows in the personal bookings table",
+  "classes.cancel -- FIXED (see documents/day1-discovery-notes.md finding 5, " +
+    "documents/day4-fix-and-log-notes.md): admin cancelling a class now " +
+    "refunds credits, cancels waitlisted rows, touches corporate bookings, " +
+    "and notifies everyone affected",
   () => {
-    it("cancels booked member bookings but does not refund their credits", async () => {
+    it("cancels booked member bookings and refunds their credits", async () => {
       const cls = await makeClass({ capacity: 5, creditCost: 2 });
       const member = await makeUser();
       const membership = await makeMembership(member, { creditsRemaining: 5 });
@@ -43,13 +45,11 @@ describe(
         .from(memberships)
         .where(eq(memberships.id, membership.id))
         .get();
-      // Credit was spent on booking (5 -> 3) and is NOT restored by the cancel.
-      // If this ever fails with 5, the credit-refund gap has been fixed --
-      // update the discovery notes rather than adjusting this expectation.
-      expect(updatedMembership?.creditsRemaining).toBe(3);
+      // Credit was spent on booking (5 -> 3) and IS restored by the cancel now.
+      expect(updatedMembership?.creditsRemaining).toBe(5);
     });
 
-    it("leaves waitlisted member bookings pointed at the now-cancelled class, untouched", async () => {
+    it("cancels waitlisted member bookings on the now-cancelled class", async () => {
       const cls = await makeClass({ capacity: 1, creditCost: 1 });
       const filler = await makeUser();
       await makeMembership(filler, { creditsRemaining: 5 });
@@ -65,16 +65,15 @@ describe(
       const admin = await makeUser({ role: "admin" });
       await callerAs(admin).classes.cancel({ id: cls.id });
 
-      const stillWaitlisted = await db
+      const updated = await db
         .select()
         .from(bookings)
         .where(eq(bookings.id, waitlistedBooking.id))
         .get();
-      // Orphaned: still "waitlisted" on a class that is now cancelled.
-      expect(stillWaitlisted?.status).toBe("waitlisted");
+      expect(updated?.status).toBe("cancelled");
     });
 
-    it("does not touch corporate bookings for the class at all", async () => {
+    it("cancels corporate bookings for the class and refunds the credit pool", async () => {
       const cls = await makeClass({ capacity: 5, creditCost: 2 });
       const company = await makeCompany({ creditPoolBalance: 10 });
       const employee = await makeUser();
@@ -87,35 +86,62 @@ describe(
       const admin = await makeUser({ role: "admin" });
       await callerAs(admin).classes.cancel({ id: cls.id });
 
-      const stillBooked = await db
+      const updated = await db
         .select()
         .from(corporateBookings)
         .where(eq(corporateBookings.id, corpBooking.id))
         .get();
-      expect(stillBooked?.status).toBe("booked"); // untouched by the class cancellation
+      expect(updated?.status).toBe("cancelled");
 
       const companyAfter = await db
         .select()
         .from(companies)
         .where(eq(companies.id, company.id))
         .get();
-      expect(companyAfter?.creditPoolBalance).toBe(8); // never refunded either
+      expect(companyAfter?.creditPoolBalance).toBe(10); // fully refunded
     });
 
-    it("sends no notification to any affected member", async () => {
-      const cls = await makeClass({ capacity: 5 });
-      const member = await makeUser();
-      await makeMembership(member, { creditsRemaining: 5 });
-      await callerAs(member).bookings.book({ classId: cls.id });
+    it("notifies every affected member (booked and waitlisted) with type class_cancelled", async () => {
+      const cls = await makeClass({ capacity: 1 });
+      const booked = await makeUser();
+      await makeMembership(booked, { creditsRemaining: 5 });
+      await callerAs(booked).bookings.book({ classId: cls.id });
+
+      const waitlisted = await makeUser();
+      await makeMembership(waitlisted, { creditsRemaining: 5 });
+      await callerAs(waitlisted).bookings.book({ classId: cls.id });
 
       const admin = await makeUser({ role: "admin" });
       await callerAs(admin).classes.cancel({ id: cls.id });
 
-      const memberNotifications = await db
+      const bookedNotifications = await db
         .select()
         .from(notifications)
-        .where(eq(notifications.userId, member.id));
-      expect(memberNotifications).toHaveLength(0);
+        .where(eq(notifications.userId, booked.id));
+      expect(bookedNotifications.some((n) => n.type === "class_cancelled")).toBe(true);
+
+      const waitlistedNotifications = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, waitlisted.id));
+      expect(waitlistedNotifications.some((n) => n.type === "class_cancelled")).toBe(true);
+    });
+
+    it("notifies an affected corporate booking's member too", async () => {
+      const cls = await makeClass({ capacity: 5 });
+      const company = await makeCompany({ creditPoolBalance: 10 });
+      const employee = await makeUser();
+      await linkCompanyMember(employee, company.id);
+      await callerAs(employee).corporateBookings.book({ classId: cls.id });
+
+      const admin = await makeUser({ role: "admin" });
+      await callerAs(admin).classes.cancel({ id: cls.id });
+
+      const employeeNotifications = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, employee.id));
+      expect(employeeNotifications.some((n) => n.type === "class_cancelled")).toBe(true);
     });
   },
 );

@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { and, asc, eq, sql } from "drizzle-orm";
-import { bookings, classes, checkins, users } from "@/db/schema";
+import { bookings, classes, checkins, corporateBookings, users } from "@/db/schema";
 import { router, protectedProcedure, staffProcedure } from "../trpc";
-import { bookMember, cancelMember, markMemberAttended } from "../domain/bookings/service";
+import {
+  bookMember,
+  cancelMember,
+  markMemberAttended,
+  markMemberNoShow,
+} from "../domain/bookings/service";
 import { FREE_CANCELLATION_HOURS, UNLIMITED_CREDITS } from "../domain/bookings/policy";
 
 export { FREE_CANCELLATION_HOURS, UNLIMITED_CREDITS };
@@ -51,6 +56,13 @@ export const bookingsRouter = router({
     .mutation(async ({ ctx, input }) =>
       markMemberAttended(ctx.db, input.bookingId, input.source),
     ),
+
+  // Fixes finding 13 (newly found, not one of the original 12 -- see
+  // documents/day4-fix-and-log-notes.md): "no_show" was a valid status
+  // nothing could ever actually set.
+  markNoShow: staffProcedure
+    .input(z.object({ bookingId: z.number() }))
+    .mutation(async ({ ctx, input }) => markMemberNoShow(ctx.db, input.bookingId)),
 
   rosterFor: staffProcedure
     .input(z.object({ classId: z.number() }))
@@ -106,16 +118,28 @@ export const bookingsRouter = router({
         .orderBy(classes.startsAt);
     }),
 
+  // Counts check-ins across BOTH channels for the class -- fixes
+  // documents/day1-discovery-notes.md finding 3: corporate check-ins used
+  // to be invisible here since checkins.bookingId is always null for them.
+  // See documents/day4-fix-and-log-notes.md.
   checkinCountFor: staffProcedure
     .input(z.object({ classId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const [result] = await ctx.db
+      const [memberResult] = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(checkins)
         .innerJoin(bookings, eq(checkins.bookingId, bookings.id))
         .where(eq(bookings.classId, input.classId));
 
-      return { count: Number(result?.count ?? 0) };
+      const [corporateResult] = await ctx.db
+        .select({ count: sql<number>`count(*)` })
+        .from(checkins)
+        .innerJoin(corporateBookings, eq(checkins.corporateBookingId, corporateBookings.id))
+        .where(eq(corporateBookings.classId, input.classId));
+
+      return {
+        count: Number(memberResult?.count ?? 0) + Number(corporateResult?.count ?? 0),
+      };
     }),
 
   waitlisted: protectedProcedure.query(async ({ ctx }) => {

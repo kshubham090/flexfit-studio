@@ -1,25 +1,28 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   corporateBookings,
   classes,
   companies,
   companyMembers,
   checkins,
+  notifications,
   type User,
 } from "@/db/schema";
 import { hoursUntil } from "../shared/time";
 import type { AnyDb } from "../shared/db";
+import { combinedBookedCount } from "../shared/capacity";
 import { CORPORATE_FREE_CANCELLATION_HOURS } from "./policy";
 
 type DbClient = typeof import("@/db").db;
 
 // Deliberately separate from domain/bookings -- corporate and personal
-// bookings are two independent channels against the same `classes` table
-// (see documents/day1-discovery-notes.md finding 2: capacity is enforced
-// per channel, not per class). Merging the two domains would resolve that
-// gap as a side effect of restructuring instead of a deliberate decision,
-// so it stays untouched here.
+// bookings are two independent channels against the same `classes` table.
+// Finding 2 (capacity enforced per channel, not per class) is now fixed by
+// having both channels check combinedBookedCount instead of their own
+// table alone (see documents/day4-fix-and-log-notes.md); the domains
+// themselves still stay separate, since merging them was never what the
+// fix required.
 
 async function getCompanyForMember(db: AnyDb, userId: number) {
   return db
@@ -85,17 +88,8 @@ export async function bookCorporate(db: DbClient, userId: number, classId: numbe
       });
     }
 
-    const [{ count }] = await tx
-      .select({ count: sql<number>`count(*)` })
-      .from(corporateBookings)
-      .where(
-        and(
-          eq(corporateBookings.classId, cls.id),
-          eq(corporateBookings.status, "booked"),
-        ),
-      );
-
-    const isFull = Number(count) >= cls.capacity;
+    const count = await combinedBookedCount(tx, cls.id);
+    const isFull = count >= cls.capacity;
 
     const created = await tx
       .insert(corporateBookings)
@@ -214,6 +208,17 @@ export async function cancelCorporate(
             })
             .where(eq(companies.id, company.id));
         }
+
+        // Creates the waitlist_promotion notification type -- previously
+        // defined but never actually inserted anywhere, see
+        // documents/day1-discovery-notes.md finding 4, fixed in
+        // documents/day4-fix-and-log-notes.md.
+        await tx.insert(notifications).values({
+          userId: next.userId,
+          type: "waitlist_promotion",
+          title: "You're in!",
+          message: `A spot opened up in ${row.cls.name} and you've been booked.`,
+        });
       }
     }
 
@@ -224,7 +229,7 @@ export async function cancelCorporate(
 export async function markCorporateAttended(
   db: DbClient,
   bookingId: number,
-  _source: "front_desk" | "kiosk" | "app",
+  source: "front_desk" | "kiosk" | "app",
 ) {
   return db.transaction(async (tx) => {
     const booking = await tx
@@ -248,12 +253,17 @@ export async function markCorporateAttended(
       .set({ status: "attended" })
       .where(eq(corporateBookings.id, booking.id));
 
-    // bookingId is deliberately null here, matching current behavior -- see
-    // documents/day1-discovery-notes.md finding 3: this makes corporate
-    // checkins invisible to bookings.checkinCountFor. Not fixed silently.
+    // bookingId stays null (corporate check-ins were never bookings rows),
+    // but corporateBookingId is now set -- fixes documents/day1-discovery-
+    // notes.md finding 3: bookings.checkinCountFor previously couldn't see
+    // these at all. `source` is now persisted too (finding 12 -- it was
+    // accepted and zod-validated but silently discarded before). See
+    // documents/day4-fix-and-log-notes.md.
     await tx.insert(checkins).values({
       userId: booking.userId,
       bookingId: null,
+      corporateBookingId: booking.id,
+      source,
     });
 
     return { ok: true };
